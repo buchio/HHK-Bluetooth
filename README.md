@@ -46,3 +46,10 @@ http://phys.sci.hokudai.ac.jp/LABS/yts/pic/GB002/GB002.html
 4. Phase4 無接触給電
  * Qi対応の給電機器を用いて、無接触で充電できるようにします。
  
+### 状況
+- [x] 方針決定
+- [ ] プロトタイピング
+- [ ] Phase1
+- [ ] Phase2
+- [ ] Phase3
+- [ ] Phase4
