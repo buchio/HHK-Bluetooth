@@ -45,11 +45,23 @@ http://phys.sci.hokudai.ac.jp/LABS/yts/pic/GB002/GB002.html
  * 充電回路を組込み、電池を外さずに充電できるようにします。
 4. Phase4 無接触給電
  * Qi対応の給電機器を用いて、無接触で充電できるようにします。
- 
-### 状況
-- [x] 方針決定
-- [ ] プロトタイピング
-- [ ] Phase1
-- [ ] Phase2
-- [ ] Phase3
-- [ ] Phase4
+
+## プロトタイプ
+
+未着手
+
+## Phase1
+
+未着手
+
+## Phase2
+
+未着手
+
+## Phase3
+
+未着手
+
+## Phase4
+
+未着手
