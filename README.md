@@ -48,7 +48,16 @@ http://phys.sci.hokudai.ac.jp/LABS/yts/pic/GB002/GB002.html
 
 ## プロトタイプ
 
-未着手
+### 回路図 Rev0.1
+
+![電源部回路図 Rev0.1](Figures/HHK-Bluetooth_PowerSupply-0.1.png)
+
+![コントローラ部回路図 Rev0.1](Figures/HHK-Bluetooth_Main-0.1.png)
+
+とりあえずでっち上げた回路図。
+全く動かしてすらいないものです。
+
+
 
 ## Phase1
 
