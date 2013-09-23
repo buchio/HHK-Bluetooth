@@ -1,3 +1,8 @@
+/Software/ProtoType1.X/build
+/Software/ProtoType1.X/dist
+/Software/ProtoType1.X/nbproject/private
+
+
 .DS_Store
 *.ce3$
 *.net
