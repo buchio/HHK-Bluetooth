@@ -21,6 +21,6 @@ HHKをBluetooth化するために必要なコントローラの要件は
 http://phys.sci.hokudai.ac.jp/LABS/yts/pic/GB002/GB002.html
 の記事が決め手となって、PIC24FJ64GB002で作ってみようと思いました。
 
-[方針](Documents/Plan.md)
+[方針](Documents/Concept.md)
 
 [計画](Documents/Plam.md)
