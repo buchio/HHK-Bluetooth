@@ -1,7 +1,8 @@
-/Software/*.X/build
-/Software/*.X/dist
-/Software/*.X/nbproject/private
+/Software/Build/*/*.X/build
+/Software/Build/*/*.X/dist
+/Software/Build/*/*.X/nbproject/private
 .DS_Store
+*.bak
 *.ce3$
 *.net
 *.rpt

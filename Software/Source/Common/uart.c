@@ -1,6 +1,6 @@
 #include "xc.h"
 
-#include "common_uart.h"
+#include "uart.h"
 
 void uart_initialize()
 {
