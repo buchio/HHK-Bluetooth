@@ -8,17 +8,7 @@
 #ifndef UART_H
 #define	UART_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-    void uart_initialize();
-    
-
-
-#ifdef	__cplusplus
-}
-#endif
+void uart_initialize();
 
 #endif	/* UART_H */
 
