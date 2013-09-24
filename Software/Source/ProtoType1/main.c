@@ -7,6 +7,8 @@
 
 
 #include <xc.h>
+#include <PIC24F_plib.h>
+
 #include "../Common/common.h"
 
 _CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF)
@@ -15,6 +17,7 @@ _CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS & W
 _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_OFF)
 
 int main(void) {
+    IsResetFromDeepSleep();
     PLL_INITIALIZE();
     uart_initialize();
 
