@@ -1,5 +1,5 @@
 #include "xc.h"
-#include "uart.h"
+#include "../uart.h"
 
 void uart_initialize() {
     // U1RXをRP7に設定

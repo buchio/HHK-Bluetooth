@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Common.X
+PROJECTNAME=Modules.X
 
 # Active Configuration
 DEFAULTCONF=default

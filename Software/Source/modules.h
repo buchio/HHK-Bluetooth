@@ -8,7 +8,7 @@
 #ifndef COMMON_H
 #define	COMMON_H
 
-#include "uart.h"
+#include "Modules/uart.h"
 
 #define PLL_INITIALIZE() { \
     unsigned int pll_startup_counter = 600; \
