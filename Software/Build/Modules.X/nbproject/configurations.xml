@@ -3,19 +3,19 @@
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <logicalFolder name="Modules" displayName="Modules" projectFiles="true">
       <logicalFolder name="Uart" displayName="Uart" projectFiles="true">
-        <itemPath>../../../Source/Modules/Uart/uart.c</itemPath>
+        <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
       </logicalFolder>
-      <itemPath>../../../Source/Modules/uart.h</itemPath>
+      <itemPath>../../Source/Modules/uart.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
-    <itemPath>../../../Source/modules.h</itemPath>
+    <itemPath>../../Source/modules.h</itemPath>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../../../Source</Elem>
+    <Elem>../../Source</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

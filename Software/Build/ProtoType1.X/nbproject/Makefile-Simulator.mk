@@ -13,8 +13,8 @@ ifeq "${IGNORE_LOCAL}" "TRUE"
 else
 include Makefile
 # Include makefile containing local settings
-ifeq "$(wildcard nbproject/Makefile-local-default.mk)" "nbproject/Makefile-local-default.mk"
-include nbproject/Makefile-local-default.mk
+ifeq "$(wildcard nbproject/Makefile-local-Simulator.mk)" "nbproject/Makefile-local-Simulator.mk"
+include nbproject/Makefile-local-Simulator.mk
 endif
 endif
 
@@ -25,7 +25,7 @@ MV=mv
 CP=cp 
 
 # Macros
-CND_CONF=default
+CND_CONF=Simulator
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 IMAGE_TYPE=debug
 OUTPUT_SUFFIX=elf
@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=../../../Source/ProtoType1/main.c
+SOURCEFILES_QUOTED_IF_SPACED=../../Source/ProtoType1/main.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/793068724/main.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/793068724/main.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/717143037/main.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/717143037/main.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/793068724/main.o
+OBJECTFILES=${OBJECTDIR}/_ext/717143037/main.o
 
 # Source Files
-SOURCEFILES=../../../Source/ProtoType1/main.c
+SOURCEFILES=../../Source/ProtoType1/main.c
 
 
 CFLAGS=
@@ -72,25 +72,25 @@ LDLIBSOPTIONS=
 FIXDEPS=fixDeps
 
 .build-conf:  ${BUILD_SUBPROJECTS}
-	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/ProtoType1.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+	${MAKE}  -f nbproject/Makefile-Simulator.mk dist/${CND_CONF}/${IMAGE_TYPE}/ProtoType1.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
 MP_PROCESSOR_OPTION=24FJ64GB002
 MP_LINKER_FILE_OPTION=,--script=p24FJ64GB002.gld
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/_ext/793068724/main.o: ../../../Source/ProtoType1/main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/793068724 
-	@${RM} ${OBJECTDIR}/_ext/793068724/main.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../../../Source/ProtoType1/main.c  -o ${OBJECTDIR}/_ext/793068724/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/793068724/main.o.d"      -g -D__DEBUG   -omf=elf -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/793068724/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/_ext/717143037/main.o: ../../Source/ProtoType1/main.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/717143037 
+	@${RM} ${OBJECTDIR}/_ext/717143037/main.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  ../../Source/ProtoType1/main.c  -o ${OBJECTDIR}/_ext/717143037/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/717143037/main.o.d"      -g -D__DEBUG   -omf=elf -O0 -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/_ext/717143037/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 else
-${OBJECTDIR}/_ext/793068724/main.o: ../../../Source/ProtoType1/main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/793068724 
-	@${RM} ${OBJECTDIR}/_ext/793068724/main.o.d 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  ../../../Source/ProtoType1/main.c  -o ${OBJECTDIR}/_ext/793068724/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/793068724/main.o.d"      -g -omf=elf -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/_ext/793068724/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/_ext/717143037/main.o: ../../Source/ProtoType1/main.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/717143037 
+	@${RM} ${OBJECTDIR}/_ext/717143037/main.o.d 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  ../../Source/ProtoType1/main.c  -o ${OBJECTDIR}/_ext/717143037/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/_ext/717143037/main.o.d"      -g -omf=elf -O0 -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/_ext/717143037/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 endif
 
@@ -133,8 +133,8 @@ endif
 
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
-	${RM} -r build/default
-	${RM} -r dist/default
+	${RM} -r build/Simulator
+	${RM} -r dist/Simulator
 
 # Enable dependency checking
 .dep.inc: .depcheck-impl
