@@ -1,8 +1,8 @@
 /Software/Build/*.X/build
 /Software/Build/*.X/dist
 /Software/Build/*.X/nbproject/private
-/Software/Build/*.X/nbproject/Makefile-genesis.properties
-/Software/Build/*.X/nbproject/Makefile-local-*.mk
+/Software/Build/*.X/nbproject/Makefile-*
+/Software/Build/*.X/nbproject/Package-*
 .DS_Store
 *.bak
 *.ce3$
