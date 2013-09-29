@@ -1,28 +1,14 @@
 #include <xc.h>
 #include <PIC24F_plib.h>
 
-#include "../../Microchip/Include/struct_queue.h"
 #include "../uart.h"
 
 #include "../queue.h"
 
-// #define TX (0)
-// #define RX (1)
-// QUEUE_INIT(UART, 7, 2); // Size: 128 ( 1 << 7 )
-
-
 // キュー
-#define UART_QUEUE_SIZE 128
-    
-typedef struct _uart_queue {
-    int head;
-    int tail;
-    int count;
-    char buffer[ UART_QUEUE_SIZE ];
-} UART_QUEUE;
-
-UART_QUEUE tx_queue;
-UART_QUEUE rx_queue;
+#define TX (0)
+#define RX (1)
+QUEUE_INIT(UART, 7, 2); // Size: 128 ( 1 << 7 )
 
 #define BAUD_RATE       38400
 #define F_CPU           16000000UL  // メインクロック周波数 16MHz
@@ -31,8 +17,8 @@ UART_QUEUE rx_queue;
 void __attribute__((__interrupt__)) _U1TXInterrupt(void)
 {
     IFS0bits.U1TXIF = 0;
-    if( StructQueueIsNotEmpty( &tx_queue, UART_QUEUE_SIZE ) ) {
-        U1TXREG = *StructQueueRemove( &tx_queue, UART_QUEUE_SIZE );
+    if( !QUEUE_ISEMPTY( UART, TX ) ) {
+        QUEUE_OUT( UART, TX, U1TXREG );
     }
 }
 
@@ -41,9 +27,8 @@ void __attribute__((__interrupt__)) _U1RXInterrupt(void)
 {
     IFS0bits.U1RXIF = 0;
 
-    if( StructQueueIsNotFull( &rx_queue, UART_QUEUE_SIZE ) ) {
-        char *c = StructQueueAdd( &rx_queue, UART_QUEUE_SIZE );
-        *c = U1RXREG;
+    if( !QUEUE_ISFULL( UART, RX ) ) {
+        QUEUE_IN( UART, RX, U1RXREG );
     } else {
         U1RXREG;// キューが一杯のときは読み捨て
     }
@@ -54,9 +39,6 @@ void Uart1Init()
 {
     RPINR18bits.U1RXR = 7;// UART1 RX input = RP7
     RPOR4bits.RP8R = 3;   // UART TX output = RP8
-
-    StructQueueInit( &rx_queue, UART_QUEUE_SIZE );
-    StructQueueInit( &tx_queue, UART_QUEUE_SIZE );
 
     U1BRG = F_CPU/16/BAUD_RATE-1;// bps
 
@@ -79,17 +61,15 @@ void Uart1Init()
 void Uart1Putc( const char c )
 {
     IEC0bits.U1TXIE=0;  // Disable Transmit Interrupt
-    if( StructQueueIsEmpty( &tx_queue, UART_QUEUE_SIZE ) ) {
+    if( QUEUE_ISEMPTY( UART, TX ) ) {
         if( U1STAbits.UTXBF != 1 ) {
             U1TXREG = c;
         } else {
-            char *p = StructQueueAdd( &tx_queue, UART_QUEUE_SIZE );
-            *p = c;
+            QUEUE_IN( UART, TX, c );
         }
     } else {
-        if( StructQueueIsNotFull( &tx_queue, UART_QUEUE_SIZE ) ) {
-            char *p = StructQueueAdd( &tx_queue, UART_QUEUE_SIZE );
-            *p = c;
+        if( !QUEUE_ISFULL( UART, TX ) ) {
+            QUEUE_IN( UART, TX, c );
         } else {
             // キューが一杯のときは無視
         }
@@ -114,7 +94,7 @@ void Uart1Puts( const char *str )
 int Uart1Write(char *dat, int szbyte)
 {
     int count = 0;
-    while( szbyte--  && StructQueueIsNotFull( &tx_queue, UART_QUEUE_SIZE ) ) {
+    while( szbyte--  && !QUEUE_ISFULL( UART, TX ) ) {
         Uart1Putc( *(dat+count) );
         count ++;
     }
@@ -127,8 +107,9 @@ int Uart1GetCh()
     int c = -1;
 
     IEC0bits.U1RXIE=0;  // Disable Receive Interrupt
-    if( StructQueueIsNotEmpty( &rx_queue, UART_QUEUE_SIZE ) ) {
-        c = *StructQueueRemove( &rx_queue, UART_QUEUE_SIZE );
+
+    if( !QUEUE_ISEMPTY( UART, RX ) ) {
+        QUEUE_OUT( UART, RX, c );
     }
     IEC0bits.U1RXIE=1;  // Enable Receive Interrupt
 
@@ -138,5 +119,5 @@ int Uart1GetCh()
 // Uart1からの受信キューのサイズを確認
 int Uart1QueueSize()
 {
-    return StructQueueCount( &rx_queue, UART_QUEUE_SIZE );
+    return QUEUE_STATUS( UART, RX );
 }
