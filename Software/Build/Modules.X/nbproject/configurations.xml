@@ -7,6 +7,7 @@
         <itemPath>../../Source/Modules/Uart/uart_printf.c</itemPath>
       </logicalFolder>
       <itemPath>../../Source/Modules/uart.h</itemPath>
+      <itemPath>../../Source/Modules/queue.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
