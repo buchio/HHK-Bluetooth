@@ -4,7 +4,10 @@
 /Software/Build/*.X/nbproject/Makefile-*
 /Software/Build/*.X/nbproject/Package-*
 .DS_Store
+*.dSYM
 *.bak
 *.ce3$
 *.net
 *.rpt
+/Software/Source/Modules/Uart/uart_printf
+/Software/Source/Modules/queue

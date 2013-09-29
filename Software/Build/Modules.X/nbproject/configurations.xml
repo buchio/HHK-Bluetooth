@@ -4,6 +4,7 @@
     <logicalFolder name="Modules" displayName="Modules" projectFiles="true">
       <logicalFolder name="Uart" displayName="Uart" projectFiles="true">
         <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
+        <itemPath>../../Source/Modules/Uart/uart_printf.c</itemPath>
       </logicalFolder>
       <itemPath>../../Source/Modules/uart.h</itemPath>
     </logicalFolder>

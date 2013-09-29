@@ -4,6 +4,13 @@
 #include "../../Microchip/Include/struct_queue.h"
 #include "../uart.h"
 
+#include "../queue.h"
+
+// #define TX (0)
+// #define RX (1)
+// QUEUE_INIT(UART, 7, 2); // Size: 128 ( 1 << 7 )
+
+
 // キュー
 #define UART_QUEUE_SIZE 128
     

@@ -13,36 +13,6 @@
         <itemPath>../../Source/Microchip/Common/uart2.c</itemPath>
       </logicalFolder>
       <logicalFolder name="Include" displayName="Include" projectFiles="true">
-        <logicalFolder name="mTouchCap" displayName="mTouchCap" projectFiles="true">
-          <logicalFolder name="mTouchCapLib"
-                         displayName="mTouchCapLib"
-                         projectFiles="true">
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapADC.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapAPI.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapApp_2ChanDirectKeys.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapApp_DirectKeys.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapApp_FourChanSlider.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapApp_MatrixKeys.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapLED.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapPhy.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapStatus.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/mTouchCapLib/mTouchCapTmr.h</itemPath>
-          </logicalFolder>
-          <logicalFolder name="PIC18F PIC24F PIC24H dsPIC Library"
-                         displayName="PIC18F PIC24F PIC24H dsPIC Library"
-                         projectFiles="true">
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouch.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouch2ChSlider.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouch4ChSlider.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchAcquisitionMCU16.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchAcquisitionMCU8.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchButton.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchControl.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchDebug.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchMatrixButton.h</itemPath>
-            <itemPath>../../Source/Microchip/Include/mTouchCap/PIC18F PIC24F PIC24H dsPIC Library/mTouchSensor.h</itemPath>
-          </logicalFolder>
-        </logicalFolder>
         <logicalFolder name="USB" displayName="USB" projectFiles="true">
           <itemPath>../../Source/Microchip/Include/USB/usb.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_ch9.h</itemPath>

@@ -187,8 +187,8 @@
         <property key="output-file-format" value="elf"/>
         <property key="save-temps" value="false"/>
       </C30Global>
-      <Simulator>
-      </Simulator>
+      <PICkit3PlatformTool>
+      </PICkit3PlatformTool>
     </conf>
     <conf name="Simulator" type="2">
       <toolsSet>

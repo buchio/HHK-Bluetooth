@@ -8,7 +8,7 @@ static void print_number (int base, int unsigned_p, long n, int hexcase, int len
 static void write_char ( char c );
 static void write_string ( char *s);
 
-void shell_printf (char *fmt, ...)
+void Uart1Printf (char *fmt, ...)
 {
     va_list args;
 
@@ -48,7 +48,7 @@ void shell_printf (char *fmt, ...)
                 write_char (c);
                 break;
             case 'p' :
-                l = (_POINTER_INT) va_arg (args, char *);
+                l = (unsigned int) va_arg (args, char *);
                 print_number (16, 1, l, 0, 8, 8);
                 break;
             case 'd' :
@@ -131,7 +131,7 @@ static void write_string( char *p )
 #ifndef __TEST_ON_PC__
 static void write_char( char c )
 {
-    shell_putc( c );
+    Uart1Putc( c );
 }
 #else
 #include <stdio.h>
@@ -144,18 +144,18 @@ static void write_char( char c )
 int main( int argc, char **argv )
 {
     int i;
-    shell_printf ( "Hello\n" );
+    Uart1Printf ( "Hello\n" );
     for ( i = 0; i < 0x10000; i += 0x1234 ) {
         printf( "Test for [%X]\n", i );
-        shell_printf ( "Hello %6X, %6x, %8.6x, %8.5X, %8.8x, %8.8X\n", i, i, i, i, i, i );
-        shell_printf ( "    %8.8X\n", i );
-        shell_printf ( "    %4.4X\n", i );
-        shell_printf ( "    %2.2X\n", i );
-        shell_printf ( "    %2.2X\n", i );
-        shell_printf ( "    %4.4X\n", i );
-        shell_printf ( "    %8.8X\n", i );
+        Uart1Printf ( "Hello %6X, %6x, %8.6x, %8.5X, %8.8x, %8.8X\n", i, i, i, i, i, i );
+        Uart1Printf ( "    %8.8X\n", i );
+        Uart1Printf ( "    %4.4X\n", i );
+        Uart1Printf ( "    %2.2X\n", i );
+        Uart1Printf ( "    %2.2X\n", i );
+        Uart1Printf ( "    %4.4X\n", i );
+        Uart1Printf ( "    %8.8X\n", i );
     }
-    shell_printf ( "%s\n", "BAKA" );
+    Uart1Printf ( "%s\n", "String Test" );
     return  0;
 }
 
@@ -164,6 +164,6 @@ int main( int argc, char **argv )
 
 /*
  * Local variables:
- *  compile-command: "gcc -Wall -g  -I . -D__TEST_ON_PC__ shell_printf.c -o shell_printf"
+ *  compile-command: "gcc -Wall -g  -I . -D__TEST_ON_PC__ uart_printf.c -o uart_printf"
  * End:
  */

@@ -25,9 +25,8 @@ int main(void) {
 
     TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
 
-            
     Uart1Init();
-    Uart1Puts( "Hello\r\n" );
+    Uart1Printf( "Hello World!\n");
 
     while (1) {
         static int c = 0;
@@ -41,9 +40,7 @@ int main(void) {
             if( c == 'A' ) LATB &= ~0b1000000000000000;//LED 点灯
             if( c == 'B' ) LATB |=  0b1000000000000000;//LED 点灯
 
-            Uart1Putc( '[' );
-            Uart1Putc( c );
-            Uart1Putc( ']' );
+            Uart1Printf( "[%c]", c );
             
         }
     }
