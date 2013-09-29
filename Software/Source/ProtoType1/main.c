@@ -23,7 +23,7 @@ int main(void) {
     IsResetFromDeepSleep();
     PLL_INITIALIZE();
 
-    TRISB = 0b1111111110111111;// PORTB bit6 OUTPUT for LED
+    TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
 
             
     Uart1Init();
@@ -33,19 +33,19 @@ int main(void) {
         static int c = 0;
         volatile static int len = 0;
 
-        LATB &= ~0b0000000001000000;//LED 点灯
         while( 1 ) {
             c = Uart1GetCh(); // リングバッファから読み込む
             if(c == -1) {
                 break;
             }
+            if( c == 'A' ) LATB &= ~0b1000000000000000;//LED 点灯
+            if( c == 'B' ) LATB |=  0b1000000000000000;//LED 点灯
+
             Uart1Putc( '[' );
             Uart1Putc( c );
             Uart1Putc( ']' );
             
         }
-
-        LATB |= 0b0000000001000000;//LED 消灯
     }
 
     
