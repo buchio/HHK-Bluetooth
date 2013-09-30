@@ -16,7 +16,8 @@ QUEUE_INIT(UART_RX, 7, unsigned char ); // Size: 128 ( 1 << 7 )
 void __attribute__((__interrupt__)) _U1TXInterrupt(void)
 {
     IFS0bits.U1TXIF = 0;
-    if( !QUEUE_ISEMPTY( UART_TX ) ) {
+    while( U1STAbits.UTXBF != 1 &&
+           !QUEUE_ISEMPTY( UART_TX ) ) {
         QUEUE_OUT( UART_TX, U1TXREG );
     }
 }
