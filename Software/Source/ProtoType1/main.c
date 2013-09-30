@@ -30,18 +30,17 @@ int main(void) {
 
     while (1) {
         static int c = 0;
-        volatile static int len = 0;
+        static int num = 0;
 
         while( 1 ) {
             c = Uart1GetCh(); // リングバッファから読み込む
-            if(c == -1) {
-                break;
+            if(c != -1) {
+                if (c == 'A') LATB &= ~0b1000000000000000; //LED 点灯
+                if (c == 'B') LATB |= 0b1000000000000000; //LED 点灯
+                Uart1Printf("[%c]", c);
             }
-            if( c == 'A' ) LATB &= ~0b1000000000000000;//LED 点灯
-            if( c == 'B' ) LATB |=  0b1000000000000000;//LED 点灯
-
-            Uart1Printf( "[%c]", c );
-            
+            Uart1Printf( "   Message Number %d\n", num++ );
+            Uart1Flush();
         }
     }
 
