@@ -13,17 +13,16 @@ QUEUE_INIT(UART_RX, 7, unsigned char ); // Size: 128 ( 1 << 7 )
 #define F_CPU           16000000UL  // メインクロック周波数 16MHz
 
 /* This is UART1 transmit ISR */
-void __attribute__((__interrupt__)) _U1TXInterrupt(void)
+void __attribute__((interrupt,no_auto_psv)) _U1TXInterrupt(void)
 {
     IFS0bits.U1TXIF = 0;
-    while( U1STAbits.UTXBF != 1 &&
-           !QUEUE_ISEMPTY( UART_TX ) ) {
+    while( U1STAbits.UTXBF != 1 && !QUEUE_ISEMPTY( UART_TX ) ) {
         QUEUE_OUT( UART_TX, U1TXREG );
     }
 }
 
 /* This is UART1 receive ISR */
-void __attribute__((__interrupt__)) _U1RXInterrupt(void)
+void __attribute__((interrupt,no_auto_psv)) _U1RXInterrupt(void)
 {
     IFS0bits.U1RXIF = 0;
 
@@ -37,8 +36,8 @@ void __attribute__((__interrupt__)) _U1RXInterrupt(void)
 // UART1初期化
 void Uart1Init()
 {
-    RPINR18bits.U1RXR = 7;// UART1 RX input = RP7
-    RPOR4bits.RP8R = 3;   // UART TX output = RP8
+    RPINR18bits.U1RXR = 8;// UART1 RX input = RP8
+    RPOR4bits.RP9R = 3;   // UART TX output = RP9
 
     U1BRG = F_CPU/16/BAUD_RATE-1;// bps
 
