@@ -100,6 +100,23 @@ int Uart1Write(char *dat, int szbyte)
     return count;
 }
 
+
+#define STDIN   0
+#define STDOUT  1
+#define STDERR  2
+
+int __attribute__((__weak__, __section__(".libc")))
+write(int handle, void * buffer, unsigned int len)
+{
+    switch (handle) {
+        case STDOUT:
+        case STDERR:
+            Uart1Write( buffer, len );
+    }
+    return (len);  // number of characters written
+}
+
+
 // Uart1の送信バッファが空になるまで待つ
 // 割り込み禁止コンテキストでの仕様不許可
 void Uart1Flush( void )
@@ -128,3 +145,4 @@ int Uart1QueueSize()
 {
     return QUEUE_STATUS( UART_RX );
 }
+
