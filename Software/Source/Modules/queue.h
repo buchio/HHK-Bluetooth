@@ -1,31 +1,132 @@
+/*
+ *  Copyright (c) 2013  Yukio Obuchi
+ *
+ *  Permission is hereby granted, free of charge, to any person
+ *  obtaining a copy of this software and associated documentation files
+ *  (the "Software"), to deal in the Software without restriction,
+ *  including without limitation the rights to use, copy, modify, merge,
+ *  publish, distribute, sublicense, and/or sell copies of the Software,
+ *  and to permit persons to whom the Software is furnished to do so,
+ *  subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be
+ *  included in all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ *  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ *  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ *  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ *
+ */
+
+/**
+ * \file
+ * \author Yukio Obuchi
+ * \date 2013-10-06 
+ *
+ * 軽量キュー
+ *
+ * キューサイズを2の冪乗として、キューポインタの計算時に比較を実施しな
+ * いようにし、処理中にallocationは行なわないことで、 処理量が少なく、
+ * ISR等でも使い易いキューを提供する。
+ * 
+ */
+
+
 #ifndef __QUEUE_H_
 #define __QUEUE_H_
 
+
+/**
+ * 内部変数用マクロ
+ *
+ * \param xName    キューの名前
+ * \param xValname
+ *
+ * キュー定義の内部で用いる変数を定義するマクロ。グローバルに定義しない
+ * と動作しないが、ユーザーが使用することは想定していない。
+ *
+ */
 #define QUEUE_VALS(xName,xValname) xName ## _ ## xValname
 
-
-#define QUEUE_INIT(xName, xSize, xType )                            \
-    volatile const int QUEUE_VALS(xName,buffermask)   = ((1 << xSize)-1); \
-    volatile const int QUEUE_VALS(xName,buffersize)   = (1 << xSize);     \
+/**
+ * 初期化
+ *
+ * \param xName    キューの名前
+ * \param xSize    キューサイズ。実際のサイズは2のxSize乗となる。
+ * \param xType    キューに格納する値の型
+ *
+ * \ref xType で指定した型の配列を要素数(1<< xSize)で宣言し、リードポイ
+ * ンタとライトポインタを定義する。
+ * 
+ *
+ */
+#define QUEUE_INIT(xName, xSize, xType )                          \
+    const int QUEUE_VALS(xName,buffermask)  =  ((1 << xSize)-1);  \
+    const int QUEUE_VALS(xName,buffersize)  =  (1 << xSize);      \
     volatile int QUEUE_VALS(xName,wp);                            \
     volatile int QUEUE_VALS(xName,rp);                            \
     volatile xType QUEUE_VALS(xName,buffer)[(1 << xSize)]
 
+/**
+ * 値をキューに格納する
+ *
+ * \param xName    キューの名前
+ * \param xval
+ *
+ */
 #define QUEUE_IN(xName, xVal) \
     QUEUE_VALS(xName,buffer)[QUEUE_VALS(xName,wp)++] = xVal; \
     QUEUE_VALS(xName,wp) &= QUEUE_VALS(xName,buffermask)
 
+/**
+ * キューから値を取り出す
+ *
+ * \param xName    キューの名前
+ * \param xval
+ *
+ */
 #define QUEUE_OUT(xName, xVal) \
     xVal = QUEUE_VALS(xName,buffer)[QUEUE_VALS(xName,rp)++]; \
     QUEUE_VALS(xName,rp) &= QUEUE_VALS(xName,buffermask)
 
+/**
+ * キューのサイズ
+ *
+ * \param xName    キューの名前
+ *
+ */
 #define QUEUE_STATUS(xName) \
     (QUEUE_VALS(xName,wp) >= QUEUE_VALS(xName,rp)) ? \
         (QUEUE_VALS(xName,wp) - QUEUE_VALS(xName,rp)) : \
         (QUEUE_VALS(xName,wp) + QUEUE_VALS(xName,buffersize) - QUEUE_VALS(xName,rp))
 
+/**
+ * キューが一杯かどうか判定する
+ *
+ * \param xName    キューの名前
+ *
+ */
 #define QUEUE_ISFULL(xName)  (QUEUE_VALS(xName,rp) == (((QUEUE_VALS(xName,wp))+1) & QUEUE_VALS(xName,buffermask)))
+
+/**
+ * キューが空かどうか判定する
+ *
+ * \param xName    キューの名前
+ *
+ */
 #define QUEUE_ISEMPTY(xName) (QUEUE_VALS(xName,rp) == QUEUE_VALS(xName,wp))
+
+/**
+ *
+ *
+ *
+ *
+ */
 #define QUEUE_CLEAR(xName) QUEUE_VALS(xName,rp) = QUEUE_VALS(xName,wp) = 0
 
 #endif //__QUEUE_H_
@@ -49,8 +150,7 @@ int main( int argc, char **argv)
     assert( QUEUE_ISEMPTY(TEST_QUE) );
 
 
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ )
-    {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ ) {
         QUEUE_IN( TEST_QUE, i*3 );
         assert( QUEUE_STATUS( TEST_QUE ) == i+1 );
     }
@@ -59,24 +159,21 @@ int main( int argc, char **argv)
     
     assert( QUEUE_ISFULL(TEST_QUE) );
 
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ )
-    {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ ) {
         QUEUE_OUT( TEST_QUE, tmp );
         assert( tmp == i*3);
     }
 
     assert( QUEUE_ISEMPTY(TEST_QUE) );
 
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)/2-1; i++ )
-    {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)/2-1; i++ ) {
         QUEUE_IN( TEST_QUE, i*3 );
         assert( QUEUE_STATUS( TEST_QUE ) == i+1 );
     }
     assert( !QUEUE_ISFULL(TEST_QUE) );
     assert( !QUEUE_ISEMPTY(TEST_QUE) );
 
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)/2-1; i++ )
-    {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)/2-1; i++ ) {
         QUEUE_OUT( TEST_QUE, tmp );
         assert( tmp == i*3 );
     }
@@ -85,10 +182,8 @@ int main( int argc, char **argv)
 
     assert( QUEUE_ISEMPTY(TEST_QUE) );
 
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)*2; i++ )
-    {
-        if ( !QUEUE_ISFULL( TEST_QUE) )
-        {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)*2; i++ ) {
+        if ( !QUEUE_ISFULL( TEST_QUE) ) {
             QUEUE_IN( TEST_QUE, i*2 );
             assert( QUEUE_STATUS( TEST_QUE ) == i+1 );
         }
@@ -96,8 +191,7 @@ int main( int argc, char **argv)
     assert( QUEUE_ISFULL(TEST_QUE) );
     assert( !QUEUE_ISEMPTY(TEST_QUE) );
     
-    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ )
-    {
+    for ( i = 0; i < (1<<TEST_QUEUE_SIZE)-1; i++ ) {
         QUEUE_OUT( TEST_QUE, tmp );
         assert( tmp == i*2 );
     }

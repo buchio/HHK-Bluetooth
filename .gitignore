@@ -3,6 +3,7 @@
 /Software/Build/*.X/nbproject/private
 /Software/Build/*.X/nbproject/Makefile-*
 /Software/Build/*.X/nbproject/Package-*
+/Software/Documents/html
 .DS_Store
 *.dSYM
 *.bak
