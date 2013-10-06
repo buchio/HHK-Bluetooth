@@ -25,6 +25,14 @@
 
 /**
  * \file
+ * 
+ * Uart1送受信モジュール
+ * 
+ * 以下の要件を満すため、Microchip社提供のものを利用せず、スクラッチで記述しています。
+ * \li デバッグ用の通信に特化するため、CPU負荷を小さくすることを最優先としています。例えば、キュー溢れなどに対しては単にデータを捨ててしまいます。
+ * \li 送信時はできるだけ特殊なAPIを利用せず、printfやputcなどをそのまま利用できるようにしています。
+ * \li 逆に、受信は完全にこのシステムに特化し、コールバックでのコマンド処理のみ可能にします。
+ * 
  * \author Yukio Obuchi 
  * \date 2013/10/06
  */
@@ -32,18 +40,25 @@
 #include <xc.h>
 #include <PIC24F_plib.h>
 
+#include <stdint.h>
+
 #include "../uart.h"
 
 #include "../queue.h"
 
-// キュー
-QUEUE_INIT(UART_TX, 7, unsigned char ); // Size: 128 ( 1 << 7 )
-QUEUE_INIT(UART_RX, 7, unsigned char ); // Size: 128 ( 1 << 7 )
+QUEUE_INIT(UART_TX, 6, unsigned char ); ///< 送信キュー サイズ：64バイト
+QUEUE_INIT(UART_RX, 7, unsigned char ); ///< 受信キュー サイズ：128バイト
 
 #define BAUD_RATE       38400
 #define F_CPU           16000000UL  // メインクロック周波数 16MHz
 
-/// UART1
+/// 
+/// UART1送信割り込み
+/// 
+/// 送信キューにデータが存在し、且つ送信バッファがフルになるまでの間ルー
+/// プします。ISR中のループとなりますが、送信バッファは4バイトしかないので気
+/// にしていません。
+/// 
 void __attribute__((interrupt,no_auto_psv)) _U1TXInterrupt(void)
 {
     IFS0bits.U1TXIF = 0;
@@ -52,11 +67,20 @@ void __attribute__((interrupt,no_auto_psv)) _U1TXInterrupt(void)
     }
 }
 
-/* This is UART1 receive ISR */
+/// 
+/// UART1受信割り込み
+/// 
+/// 受信バッファから受信キューにデータをコピーします。
+/// 受信キューが一杯のときは単に読み捨てます。
+/// 
+/// 
 void __attribute__((interrupt,no_auto_psv)) _U1RXInterrupt(void)
 {
     IFS0bits.U1RXIF = 0;
 
+    if(U1STAbits.OERR) {
+        U1STAbits.OERR = 0;
+    }
     if( !QUEUE_ISFULL( UART_RX ) ) {
         QUEUE_IN( UART_RX, U1RXREG );
     } else {
@@ -64,15 +88,21 @@ void __attribute__((interrupt,no_auto_psv)) _U1RXInterrupt(void)
     }
 }
 
-// UART1初期化
+///
+/// UART1初期化
+///
+/// 組込むハードウェアに合わせて変更することを想定し、パラメータは無し
+/// 設定の詳細はダブルメンテナンスを避けるためここには記述していません。
+/// ソースコードを参照して下さい。
+///
 void Uart1Init()
 {
     RPINR18bits.U1RXR = 8;// UART1 RX input = RP8
     RPOR4bits.RP9R = 3;   // UART TX output = RP9
 
-    U1BRG = F_CPU/16/BAUD_RATE-1;// bps
+    U1BRG = F_CPU/16/BAUD_RATE-1;// 38400bps
 
-    IPC3bits.U1TXIP2=1;// Set Uart TX Interrupt Priority
+    IPC3bits.U1TXIP2=1; // Set Uart TX Interrupt Priority
     IPC3bits.U1TXIP1=0;
     IPC3bits.U1TXIP0=0;
 
@@ -87,7 +117,15 @@ void Uart1Init()
     IEC0bits.U1TXIE=1;  // Enable Transmit Interrupt
 }
 
-// UART1に文字を送信する
+///
+/// UART1に文字を送信する
+///
+/// \param c 文字
+///
+/// 送信キューと送信バッファが共に空の場合には送信レジスタにデータをコピーします。
+/// そうでない場合には送信キューに文字を格納し、実際の送信は送信割り込みで実施します。
+/// 送信キューが一杯のときは単に読み捨てます。
+///
 void Uart1Putc( const char c )
 {
     IEC0bits.U1TXIE=0;  // Disable Transmit Interrupt
@@ -108,7 +146,11 @@ void Uart1Putc( const char c )
 }
 
 
-// UART1に文字列を送信する
+///
+/// UART1に文字列を送信する
+///
+/// \param str '\0'でターミネートされた文字列
+///
 void Uart1Puts( const char *str )
 {
     char c = 0;
@@ -120,7 +162,14 @@ void Uart1Puts( const char *str )
 
 }
 
-// UART1にバイト列を送信する
+///
+/// UART1にバイト列を送信する
+///
+/// param dat    バイト列
+/// param szbyte 送信するバイト数
+///
+/// 送信にUart1Putcを用いているので、キューが溢れた場合にはデータが抜けます。 
+///
 int Uart1Write(char *dat, int szbyte)
 {
     int count = 0;
@@ -136,8 +185,16 @@ int Uart1Write(char *dat, int szbyte)
 #define STDOUT  1
 #define STDERR  2
 
-int __attribute__((__weak__, __section__(".libc")))
-write(int handle, void * buffer, unsigned int len)
+/// 
+/// スタンダードIOを利用するためのwrite置き換え
+/// 
+/// \param handle ファイルハンドル STDOUTもしくはSTDERRのみ対応
+/// \param buffer 送信データを格納したバッファ
+/// \param len    送信するバイト数
+/// 
+/// weakシンボルを用いてwriteを置き換え、printf, puts等を利用できるようにします。
+/// 
+int __attribute__((__weak__, __section__(".libc"))) write(int handle, void * buffer, unsigned int len)
 {
     switch (handle) {
         case STDOUT:
@@ -148,15 +205,23 @@ write(int handle, void * buffer, unsigned int len)
 }
 
 
-// Uart1の送信バッファが空になるまで待つ
-// 割り込み禁止コンテキストでの仕様不許可
+///
+/// Uart1の送信バッファが空になるまで待つ
+///
+/// 割り込み禁止コンテキストでの使用はできません。
+///
 void Uart1Flush( void )
 {
     while( !QUEUE_ISEMPTY( UART_TX ) ) {
     }
 }
 
-// Uart1から一文字受信する
+///
+/// Uart1から一文字受信する
+///
+/// \return 受信文字 キューに文字が存在しなかった場合には-1
+///
+///
 int Uart1GetCh()
 {
     int c = -1;
@@ -171,8 +236,22 @@ int Uart1GetCh()
     return c;
 }
 
-// Uart1からの受信キューのサイズを確認
-int Uart1QueueSize()
+///
+/// Uart1からの受信キューのサイズを確認
+///
+/// \return キューに入っているデータサイズ
+///
+int Uart1SendQueueSize()
+{
+    return QUEUE_STATUS( UART_TX );
+}
+
+///
+/// Uart1からの受信キューのサイズを確認
+///
+/// \return キューに入っているデータサイズ
+///
+int Uart1ReceiveQueueSize()
 {
     return QUEUE_STATUS( UART_RX );
 }

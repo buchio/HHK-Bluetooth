@@ -38,7 +38,8 @@ void Uart1Puts( const char *str );
 void Uart1Flush( void );
 int Uart1Write( char *dat, int szbyte );
 int Uart1GetCh( void );
-int Uart1QueueSize( void );
+int Uart1SendQueueSize( void );
+int Uart1ReceiveQueueSize( void );
 
 
 #endif //H_UART_H_130929061643_
