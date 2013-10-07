@@ -38,7 +38,7 @@
  */
 
 #include <xc.h>
-#include <PIC24F_plib.h>
+#include <uart.h>
 
 #include <stdint.h>
 
