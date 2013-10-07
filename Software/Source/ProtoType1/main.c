@@ -80,7 +80,9 @@
 
 #define USE_AND_OR /* To enable AND_OR mask setting */
 #include <xc.h>
-#include <PIC24F_plib.h>
+#include <ports.h>
+#include <timer.h>
+#include <dpslp.h>
 
 #include "../modules.h"
 
