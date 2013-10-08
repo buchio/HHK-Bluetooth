@@ -42,9 +42,9 @@ Date        Comments
 #if defined(__PIC32MX__)
 	#include <plib.h>
 #endif
-#include "Compiler.h"
-#include "HardwareProfile.h"
-#include "TimeDelay.h" 
+#include "../Include/Compiler.h"
+#include "../HardwareProfile.h"
+#include "../Include/TimeDelay.h" 
 
 /****************************************************************************
   Function:

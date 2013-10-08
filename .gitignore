@@ -12,3 +12,6 @@
 *.rpt
 /Software/Source/Modules/Uart/uart_printf
 /Software/Source/Modules/queue
+GPATH
+GRTAGS
+GTAGS

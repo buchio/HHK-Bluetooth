@@ -73,12 +73,12 @@ Change History:
 #include <stdlib.h>
 #include <string.h>
 #include "GenericTypeDefs.h"
-#include "USB/usb.h"
+#include "../Include/USB/usb.h"
 #include "usb_host_local.h"
 #include "usb_hal_local.h"
-#include "HardwareProfile.h"
+#include "../HardwareProfile.h"
 //#include "USB/usb_hal.h"
-#include <debug.h>
+//#include <debug.h>
 
 #ifndef USB_MALLOC
     #define USB_MALLOC(size) malloc(size)
@@ -91,7 +91,7 @@ Change History:
 #define USB_FREE_AND_CLEAR(ptr) {USB_FREE(ptr); ptr = NULL;}
 
 #if defined( USB_ENABLE_TRANSFER_EVENT )
-    #include "struct_queue.h"
+    #include "../Include/struct_queue.h"
 #endif
 
 // *****************************************************************************
@@ -403,7 +403,7 @@ BOOL USBHostInit(  unsigned long flags  )
     {
         if ((usbDeviceInfo.pEndpoint0 = (USB_ENDPOINT_INFO*)USB_MALLOC( sizeof(USB_ENDPOINT_INFO) )) == NULL)
         {
-            DEBUG_PutString( "HOST: Cannot allocate for endpoint 0.\r\n" );
+            printf( "HOST: Cannot allocate for endpoint 0.\r\n" );
             return FALSE;
         }
         usbDeviceInfo.pEndpoint0->next = NULL;
@@ -470,7 +470,7 @@ BOOL USBHostIsochronousBuffersCreate( ISOCHRONOUS_DATA * isocData, BYTE numberOf
             isocData->buffers[i].pBuffer = USB_MALLOC( bufferSize );
             if (isocData->buffers[i].pBuffer == NULL)
             {
-                DEBUG_PutString( "HOST:  Not enough memory for isoc buffers.\r\n" );
+                printf( "HOST:  Not enough memory for isoc buffers.\r\n" );
     
                 // Release all previous buffers.
                 for (j=0; j<i; j++)
@@ -1275,8 +1275,7 @@ void USBHostTasks( void )
         #ifdef USE_MANUAL_DETACH_DETECT
             if (((usbHostState & STATE_MASK) != STATE_DETACHED) && !U1IRbits.ATTACHIF)
             {
-                DEBUG_PutChar( '>' );
-                DEBUG_PutChar( ']' );
+                printf( ">]" );
 
                 usbHostState = STATE_DETACHED;
             }
@@ -1324,7 +1323,7 @@ void USBHostTasks( void )
     // See if we got an interrupt to change our state.
     if (usbOverrideHostState != NO_STATE)
     {
-        DEBUG_PutChar('>');
+        printf(">");
 
         usbHostState = usbOverrideHostState;
         usbOverrideHostState = NO_STATE;
@@ -1345,7 +1344,7 @@ void USBHostTasks( void )
                     // Turn off the module and free up memory.
                     USBHostShutdown();
 
-                    DEBUG_PutString( "HOST: Initializing DETACHED state.\r\n" );
+                    printf( "HOST: Initializing DETACHED state.\r\n" );
 
                     // Initialize Endpoint 0 attributes.
                     usbDeviceInfo.pEndpoint0->next                         = NULL;
@@ -1493,7 +1492,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_START_SETTLING_DELAY:
-                            DEBUG_PutString( "HOST: Starting settling delay.\r\n" );
+                            printf( "HOST: Starting settling delay.\r\n" );
 
                             // Clear and turn on the DETACH interrupt.
                             U1IR                    = USB_INTERRUPT_DETACH;   // The interrupt is cleared by writing a '1' to the flag.
@@ -1525,7 +1524,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SET_RESET:
-                            DEBUG_PutString( "HOST: Resetting the device.\r\n" );
+                            printf( "HOST: Resetting the device.\r\n" );
 
                             // Prepare a data buffer for us to use.  We'll make it 8 bytes for now,
                             // which is the minimum wMaxPacketSize for EP0.
@@ -1536,7 +1535,7 @@ void USBHostTasks( void )
 
                             if ((pEP0Data = (BYTE *)USB_MALLOC( 8 )) == NULL)
                             {
-                                DEBUG_PutString( "HOST: Error alloc-ing pEP0Data\r\n" );
+                                printf( "HOST: Error alloc-ing pEP0Data\r\n" );
 
                                 _USB_SetErrorCode( USB_HOLDING_OUT_OF_MEMORY );
                                 _USB_SetHoldState();
@@ -1571,7 +1570,7 @@ void USBHostTasks( void )
                             // See if the device is low speed.
                             if (!U1CONbits.JSTATE)
                             {
-                                DEBUG_PutString( "HOST: Low Speed!\r\n" );
+                                printf( "HOST: Low Speed!\r\n" );
 
                                 usbDeviceInfo.flags.bfIsLowSpeed    = 1;
                                 usbDeviceInfo.deviceAddressAndSpeed = 0x80;
@@ -1606,7 +1605,7 @@ void USBHostTasks( void )
                             break;
 
                         case SUBSUBSTATE_RESET_RECOVERY:
-                            DEBUG_PutString( "HOST: Reset complete.\r\n" );
+                            printf( "HOST: Reset complete.\r\n" );
 
                             // Deassert reset.
                             U1CONbits.USBRST        = 0;
@@ -1627,7 +1626,7 @@ void USBHostTasks( void )
                             break;
 
                         case SUBSUBSTATE_RESET_COMPLETE:
-                            DEBUG_PutString( "HOST: Reset complete.\r\n" );
+                            printf( "HOST: Reset complete.\r\n" );
 
                             // Enable USB interrupts
                             U1IE                    = USB_INTERRUPT_TRANSFER | USB_INTERRUPT_SOF | USB_INTERRUPT_ERROR | USB_INTERRUPT_DETACH;
@@ -1650,7 +1649,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_GET_DEVICE_DESCRIPTOR_SIZE:
-                            DEBUG_PutString( "HOST: Getting Device Descriptor size.\r\n" );
+                            printf( "HOST: Getting Device Descriptor size.\r\n" );
 
                             // Set up and send GET DEVICE DESCRIPTOR
                             if (pDeviceDescriptor != NULL)
@@ -1721,7 +1720,7 @@ void USBHostTasks( void )
                             if ((pEP0Data = (BYTE *)USB_MALLOC( usbDeviceInfo.pEndpoint0->wMaxPacketSize )) == NULL)
                             {
                                 // We cannot continue.  Freeze until the device is removed.
-                                DEBUG_PutString( "HOST: Error re-alloc-ing pEP0Data\r\n" );
+                                printf( "HOST: Error re-alloc-ing pEP0Data\r\n" );
 
                                 _USB_SetErrorCode( USB_HOLDING_OUT_OF_MEMORY );
                                 _USB_SetHoldState();
@@ -1743,7 +1742,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_GET_DEVICE_DESCRIPTOR:
-                            DEBUG_PutString( "HOST: Getting device descriptor.\r\n" );
+                            printf( "HOST: Getting device descriptor.\r\n" );
 
                             // If we are currently sending a token, we cannot do anything.
                             if (usbBusInfo.flags.bfTokenAlreadyWritten)   //(U1CONbits.TOKBUSY)
@@ -1791,7 +1790,7 @@ void USBHostTasks( void )
                     break;
 
                 case SUBSTATE_VALIDATE_VID_PID:
-                    DEBUG_PutString( "HOST: Validating VID and PID.\r\n" );
+                    printf( "HOST: Validating VID and PID.\r\n" );
 
                     // Search the TPL for the device's VID & PID.  If a client driver is
                     // available for the over-all device, use it.  Otherwise, we'll search
@@ -1816,7 +1815,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_SET_DEVICE_ADDRESS:
-                            DEBUG_PutString( "HOST: Setting device address.\r\n" );
+                            printf( "HOST: Setting device address.\r\n" );
 
                             // Select an address for the device.  Store it so we can access it again
                             // easily.  We'll put the low speed indicator on later.
@@ -1894,7 +1893,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_GET_CONFIG_DESCRIPTOR_SIZE:
-                            DEBUG_PutString( "HOST: Getting Config Descriptor size.\r\n" );
+                            printf( "HOST: Getting Config Descriptor size.\r\n" );
 
                             // Set up and send GET CONFIGURATION (n) DESCRIPTOR with a length of 8
                             pEP0Data[0] = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE;
@@ -1978,7 +1977,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_GET_CONFIG_DESCRIPTOR:
-                            DEBUG_PutString( "HOST: Getting Config Descriptor.\r\n" );
+                            printf( "HOST: Getting Config Descriptor.\r\n" );
 
                             // Set up and send GET CONFIGURATION (n) DESCRIPTOR.
                             pEP0Data[0] = USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE;
@@ -2101,14 +2100,14 @@ void USBHostTasks( void )
                             break;
 
                         case SUBSUBSTATE_SEND_SET_OTG:
-                            DEBUG_PutString( "HOST: Determine OTG capability.\r\n" );
+                            printf( "HOST: Determine OTG capability.\r\n" );
 
                             // If the device does not support OTG, or
                             // if the device has already been configured, bail.
                             // Otherwise, send SET FEATURE to configure it.
                             if (!usbDeviceInfo.flags.bfConfiguredOTG)
                             {
-                                DEBUG_PutString( "HOST: ...OTG needs configuring.\r\n" );
+                                printf( "HOST: ...OTG needs configuring.\r\n" );
 
                                 usbDeviceInfo.flags.bfConfiguredOTG = 1;
 
@@ -2133,7 +2132,7 @@ void USBHostTasks( void )
                             }
                             else
                             {
-                                DEBUG_PutString( "HOST: ...No OTG.\r\n" );
+                                printf( "HOST: ...No OTG.\r\n" );
 
                                 _USB_SetNextSubState();
                             }
@@ -2163,7 +2162,7 @@ void USBHostTasks( void )
                                     _USB_CheckCommandAndEnumerationAttempts();
 
                                     #if defined(USB_SUPPORT_OTG)
-                                        DEBUG_PutString( "\r\n***** USB OTG Error - Set Feature B_HNP_ENABLE Stalled - Device Not Responding *****\r\n" );
+                                        printf( "\r\n***** USB OTG Error - Set Feature B_HNP_ENABLE Stalled - Device Not Responding *****\r\n" );
                                     #endif
 
                                 }
@@ -2200,7 +2199,7 @@ void USBHostTasks( void )
                     switch (usbHostState & SUBSUBSTATE_MASK)
                     {
                         case SUBSUBSTATE_SEND_SET_CONFIGURATION:
-                            DEBUG_PutString( "HOST: Set configuration.\r\n" );
+                            printf( "HOST: Set configuration.\r\n" );
 
                             // Set up and send SET CONFIGURATION.
                             pEP0Data[0] = USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_STANDARD | USB_SETUP_RECIPIENT_DEVICE;
@@ -2239,7 +2238,7 @@ void USBHostTasks( void )
                             break;
 
                         case SUBSUBSTATE_INIT_CLIENT_DRIVERS:
-                            DEBUG_PutString( "HOST: Initializing client drivers...\r\n" );
+                            printf( "HOST: Initializing client drivers...\r\n" );
 
                             _USB_SetNextState();
                             // Initialize client driver(s) for this configuration.
@@ -2248,7 +2247,7 @@ void USBHostTasks( void )
                                 // We have a device that requires only one client driver.  Make sure
                                 // that client driver can initialize this device.  If the client
                                 // driver initialization fails, we cannot enumerate this device.
-                                DEBUG_PutString( "HOST: Using device client driver.\r\n" );
+                                printf( "HOST: Using device client driver.\r\n" );
 
                                 temp = usbDeviceInfo.deviceClientDriver;
                                 if (!usbClientDrvTable[temp].Initialize(usbDeviceInfo.deviceAddress, usbClientDrvTable[temp].flags, temp))
@@ -2262,7 +2261,7 @@ void USBHostTasks( void )
                                 // We have a device that requires multiple client drivers.  Make sure
                                 // every required client driver can initialize this device.  If any
                                 // client driver initialization fails, we cannot enumerate the device.
-                                DEBUG_PutString( "HOST: Scanning interfaces.\r\n" );
+                                printf( "HOST: Scanning interfaces.\r\n" );
 
                                 pCurrentInterface = usbDeviceInfo.pInterfaceList;
                                 while (pCurrentInterface)
@@ -2361,7 +2360,7 @@ void USBHostTasks( void )
                     // We're here because we cannot communicate with the current device
                     // that is plugged in.  Turn off SOF's and all interrupts except
                     // the DETACH interrupt.
-                    DEBUG_PutString( "HOST: Holding.\r\n" );
+                    printf( "HOST: Holding.\r\n" );
 
                     U1CON               = USB_HOST_MODE_ENABLE | USB_SOF_DISABLE;                       // Turn of SOF's to cut down noise
                     U1IE                = 0;
@@ -2789,7 +2788,7 @@ BYTE USBHostWrite( BYTE deviceAddress, BYTE endpoint, BYTE *data, DWORD size )
 
 void _USB_CheckCommandAndEnumerationAttempts( void )
 {
-    DEBUG_PutChar( '=' );
+    printf( "=" );
 
     // Clear the error and stall flags.  A stall here does not require
     // host intervention to clear.
@@ -2879,7 +2878,7 @@ BOOL _USB_FindClassDriver( BYTE bClass, BYTE bSubClass, BYTE bProtocol, BYTE *pb
             {
                 *pbClientDrv = usbTPL[i].ClientDriver;
 
-                DEBUG_PutString( "HOST: Client driver found.\r\n" );
+                printf( "HOST: Client driver found.\r\n" );
 
                 return TRUE;
             }    
@@ -2887,7 +2886,7 @@ BOOL _USB_FindClassDriver( BYTE bClass, BYTE bSubClass, BYTE bProtocol, BYTE *pb
         i++;
     }
 
-    DEBUG_PutString( "HOST: Client driver NOT found.\r\n" );
+    printf( "HOST: Client driver NOT found.\r\n" );
 
     return FALSE;
 
@@ -2937,7 +2936,7 @@ BOOL _USB_FindDeviceLevelClientDriver( void )
                 (usbTPL[i].device.bSubClass == pDesc->bDeviceSubClass) &&
                 (usbTPL[i].device.bProtocol == pDesc->bDeviceProtocol)   )
             {
-                DEBUG_PutString( "HOST: Device validated by class\r\n" );
+                printf( "HOST: Device validated by class\r\n" );
 
                 usbDeviceInfo.flags.bfUseDeviceClientDriver = 1;
             }
@@ -2961,7 +2960,7 @@ BOOL _USB_FindDeviceLevelClientDriver( void )
                 }
                 else
                 {
-                    DEBUG_PutString( "HOST: Device validated by VID/PID\r\n" );
+                    printf( "HOST: Device validated by VID/PID\r\n" );
 
                     usbDeviceInfo.flags.bfUseDeviceClientDriver = 1;
                 }
@@ -2985,7 +2984,7 @@ BOOL _USB_FindDeviceLevelClientDriver( void )
                 if (!USB_HOST_APP_EVENT_HANDLER( USB_ROOT_HUB, EVENT_OVERRIDE_CLIENT_DRIVER_SELECTION,
                                 &eventData, sizeof(USB_OVERRIDE_CLIENT_DRIVER_EVENT_DATA) ))
                 {
-                    DEBUG_PutString( "HOST: Device validated by VID/PID\r\n" );
+                    printf( "HOST: Device validated by VID/PID\r\n" );
 
                     usbDeviceInfo.flags.bfUseDeviceClientDriver = 1;
                 }
@@ -3010,7 +3009,7 @@ BOOL _USB_FindDeviceLevelClientDriver( void )
         i++;
     }
 
-    DEBUG_PutString( "HOST: Device not yet validated\r\n" );
+    printf( "HOST: Device not yet validated\r\n" );
 
     return FALSE;
 }
@@ -4951,7 +4950,7 @@ BOOL _USB_ParseConfigurationDescriptor( void )
     if (pTempInterfaceList == NULL)
     {
         // We could find no supported interfaces.
-        DEBUG_PutString( "HOST: No supported interfaces.\r\n" );
+        printf( "HOST: No supported interfaces.\r\n" );
 
         error = TRUE;
     }
@@ -4992,7 +4991,7 @@ BOOL _USB_ParseConfigurationDescriptor( void )
         usbDeviceInfo.currentConfigurationPower = bMaxPower;
     
         // Success!
-        DEBUG_PutString( "HOST: Parse Descriptor success\r\n" );
+        printf( "HOST: Parse Descriptor success\r\n" );
 
         usbDeviceInfo.pInterfaceList = pTempInterfaceList;
         return TRUE;
@@ -5393,7 +5392,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
             _USB_NotifyAllDataClients(0, EVENT_1MS, (void*)&msec_count, 0);
         #endif
 
-        DEBUG_PutChar('~');
+        printf("~");
 
         #ifdef  USB_SUPPORT_OTG
             if (USBOTGGetSRPTimeOutFlag())
@@ -5470,7 +5469,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
     // The attach interrupt is level, not edge, triggered.  So make sure we have it enabled.
     if (U1IEbits.ATTACHIE && U1IRbits.ATTACHIF)
     {
-        DEBUG_PutChar( '[' );
+        printf( "[" );
 
         // The attach interrupt is level, not edge, triggered.  If we clear it, it just
         // comes right back.  So clear the enable instead
@@ -5499,7 +5498,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
 
     if (U1IEbits.DETACHIE && U1IRbits.DETACHIF)
     {
-        DEBUG_PutChar( ']' );
+        printf( "]" );
 
         U1IR                    = USB_INTERRUPT_DETACH;
         U1IEbits.DETACHIE       = 0;
@@ -5598,7 +5597,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
         WORD                    packetSize;
         BDT_ENTRY               *pBDT;
 
-        DEBUG_PutChar( '!' );
+        printf( "!" );
 
         // The previous token has finished, so clear the way for writing a new one.
         usbBusInfo.flags.bfTokenAlreadyWritten = 0;
@@ -5798,7 +5797,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
                 // The application must clear this if not a control endpoint.
                 // A stall on a control endpoint does not indicate that the
                 // endpoint is halted.
-                DEBUG_PutChar( '^' );
+                printf( "^" );
 
                 pCurrentEndpoint->status.bfStalled = 1;
                 pCurrentEndpoint->bErrorCode       = USB_ENDPOINT_STALLED;
@@ -5904,8 +5903,7 @@ void __ISR(_USB_1_VECTOR, ipl4) _USB1Interrupt(void)
 
     if (U1IEbits.UERRIE && U1IRbits.UERRIF)
     {
-        DEBUG_PutChar('#');
-        DEBUG_PutHexUINT8( U1EIR );
+        printf( "#%02X", U1EIR );
 
         // The previous token has finished, so clear the way for writing a new one.
         usbBusInfo.flags.bfTokenAlreadyWritten = 0;

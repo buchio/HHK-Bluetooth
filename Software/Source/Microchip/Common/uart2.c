@@ -46,9 +46,9 @@ BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 ********************************************************************************
 */
 
-#include "Compiler.h"
-#include "HardwareProfile.h"
-#include "uart2.h"
+#include "../Include/Compiler.h"
+#include "../HardwareProfile.h"
+#include "../Include/uart2.h"
 
 //******************************************************************************
 // Constants

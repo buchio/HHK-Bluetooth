@@ -40,8 +40,8 @@ Description:
 *******************************************************************/
 
 /** Include Files *************************************************/
-#include <Compiler.h>
-#include <GenericTypeDefs.h>
+#include "../Include/Compiler.h"
+#include "../Include/GenericTypeDefs.h"
 
 /** Build Options *************************************************/
 #if !defined(DEBUG_BUFFER_SIZE)
@@ -56,7 +56,7 @@ typedef struct{
 } DEBUG_SESSION;
 
 /** Variables *****************************************************/
-DEBUG_SESSION debug;
+volatile DEBUG_SESSION debug;
 
 /** Functions *****************************************************/
 
@@ -89,7 +89,7 @@ void DEBUG_Initialize()
 {
     debug.position = 0;
     debug.overflow = FALSE;
-    memset(debug.data, 0, sizeof(debug.data));
+    memset((void *)debug.data, 0, sizeof(debug.data));
 }
 
 
