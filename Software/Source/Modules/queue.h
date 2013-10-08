@@ -23,6 +23,10 @@
  *
  */
 
+/// \ingroup Modules
+/// \defgroup Queue 軽量キュー
+/// @{
+
 /**
  * \file
  * \author Yukio Obuchi
@@ -151,6 +155,7 @@
 
 #endif //__QUEUE_H_
 
+/// @}
 
 #ifdef __RUN_MODULE_TEST__
 #include <stdio.h>

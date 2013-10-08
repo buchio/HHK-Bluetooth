@@ -2,11 +2,8 @@
 <configurationDescriptor version="62">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <logicalFolder name="Modules" displayName="Modules" projectFiles="true">
-      <logicalFolder name="Uart" displayName="Uart" projectFiles="true">
-        <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
-      </logicalFolder>
-      <itemPath>../../Source/Modules/uart.h</itemPath>
       <itemPath>../../Source/Modules/queue.h</itemPath>
+      <itemPath>../../Source/Modules/uart.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

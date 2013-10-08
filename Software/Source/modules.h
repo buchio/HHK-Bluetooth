@@ -32,14 +32,34 @@
 #ifndef COMMON_H
 #define	COMMON_H
 
-#include "Modules/uart.h"
+/// \defgroup Modules
+/// @{
 
-#define PLL_INITIALIZE() { \
+/// \defgroup PLL PLL操作
+/// @{
+#define PLL_INITIALIZE() {                  \
     unsigned int pll_startup_counter = 600; \
     CLKDIVbits.PLLEN = 1;\
     while( pll_startup_counter -- ) {\
     } \
 }
+/// @}
+
+/// \defgroup Uart UART入出力モジュールAPI
+/// @{
+
+void Uart1Init();
+void Uart1Putc( const char c );
+void Uart1Puts( const char *str );
+void Uart1Flush( void );
+int Uart1Write( char *dat, int szbyte );
+int Uart1GetCh( void );
+int Uart1SendQueueSize( void );
+int Uart1ReceiveQueueSize( void );
+
+/// @}
+
+/// @}
 
 #endif	/* COMMON_H */
 
