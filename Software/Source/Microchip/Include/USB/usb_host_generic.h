@@ -71,7 +71,6 @@ BC/KO       25-Dec-2007 First release
 // This is the default Generic Client Driver endpoint number.
 #ifndef USB_GENERIC_EP
     #define USB_GENERIC_EP       1
-	#define USB_GENERIC_EP2      2
 #endif
 
 // *****************************************************************************
@@ -113,8 +112,7 @@ BC/KO       25-Dec-2007 First release
         // USB_HOST_APP_EVENT_HANDLER is called with this event, *data points
         // to the receive buffer, and size is the actual number of bytes read
         // from the device.
-#define EVENT_GENERIC_RX1_DONE (EVENT_GENERIC_BASE+EVENT_GENERIC_OFFSET+3)
-#define EVENT_GENERIC_RX2_DONE (EVENT_GENERIC_BASE+EVENT_GENERIC_OFFSET+4)
+#define EVENT_GENERIC_RX_DONE (EVENT_GENERIC_BASE+EVENT_GENERIC_OFFSET+3)
 
 
 // *****************************************************************************
@@ -164,8 +162,7 @@ typedef struct _GENERIC_DEVICE
         {
             BYTE initialized    : 1;    // Driver has been initialized
             BYTE txBusy         : 1;    // Driver busy transmitting data
-            BYTE rx1Busy         : 1;    // Driver busy receiving data
-            BYTE rx2Busy         : 1;    // Driver busy receiving data
+            BYTE rxBusy         : 1;    // Driver busy receiving data
             #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
                 BYTE serialNumberValid    : 1;    // Serial number is valid
             #endif
@@ -473,8 +470,7 @@ BYTE USBHostGenericRead( BYTE deviceAddress, void *buffer, DWORD length);
     None
   ***************************************************************************/
 
-#define USBHostGenericRx1IsBusy(a) ( (API_VALID(a)) ? ((gc_DevData.flags.rx1Busy == 1) ? TRUE : FALSE) : TRUE )
-#define USBHostGenericRx2IsBusy(a) ( (API_VALID(a)) ? ((gc_DevData.flags.rx2Busy == 1) ? TRUE : FALSE) : TRUE )
+#define USBHostGenericRxIsBusy(a) ( (API_VALID(a)) ? ((gc_DevData.flags.rxBusy == 1) ? TRUE : FALSE) : TRUE )
 //BOOL USBHostGenericRxIsBusy( BYTE deviceAddress );
 
 
@@ -662,9 +658,6 @@ BYTE USBHostGenericWrite( BYTE deviceAddress, void *buffer, DWORD length);
                               USB_INVALID_STATE )
 */
 
-BYTE USBHostGenericClassRequest( BYTE deviceAddress, BYTE *data, WORD wLength );
-BYTE USBHostGenericAclWrite( BYTE deviceAddress, void *buffer, DWORD length );
-BYTE USBHostGenericAclRead( BYTE deviceAddress, void *buffer, DWORD length );
 
 /*************************************************************************
  * EOF usb_client_generic.h

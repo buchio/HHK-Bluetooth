@@ -78,7 +78,7 @@
 
 #include <stdio.h>
 
-#define USE_AND_OR /* To enable AND_OR mask setting */
+#define USE_AND_OR
 #include <xc.h>
 #include <ports.h>
 #include <timer.h>
@@ -86,18 +86,657 @@
 
 #include "../modules.h"
 
+
 _CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF)
-_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL &
-         PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON)
+_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON)
 _CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS & WPEND_WPENDMEM)
 _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_OFF)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// USB TEST
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// USB TEST Microchip
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include "GenericTypeDefs.h"
+#include "../Microchip/HardwareProfile.h"
+#include "../Microchip/Include/USB/usb_config.h"
+#include "../Microchip/Include/USB/usb.h"
+#include "../Microchip/Include/USB/usb_host_generic.h"
+#include "user.h"
+#include "../Microchip/Include/timer.h"
+
+
+
+// Application States
+typedef enum
+{
+    DEMO_INITIALIZE = 0,                // Initialize the app when a device is attached
+    DEMO_STATE_IDLE,                    // Inactive State
+
+
+    DEMO_STATE_GET_DEV_VERSION,         // New device attached, send Get-Dev-FW-Version command
+    DEMO_STATE_WAITING_VER_REQ,         // Waiting for Get Version command to complete
+    DEMO_STATE_READ_DEV_VERSION,        // Start reading Dev FW version data
+    DEMO_STATE_WAITING_READ_VER,        // Waiting for read of version data to complete
+    DEMO_STATE_VERIFY_DEV_FW_VER,       // Dev FW Ver received, verify & display it
+
+    DEMO_STATE_GET_TEMPERATURE,         // Send get-temperature command
+    DEMO_STATE_WAITING_GET_TEMP,        // Waiting for get-temperature command to complete
+    DEMO_STATE_READ_TEMPERATURE,        // Start reading temperature data
+    DEMO_STATE_WAITING_READ_TEMP,       // Waiting for read of temperature data to complete
+    DEMO_STATE_DISPLAY_TEMPERATURE,     // Temperature data received, display it
+
+    DEMO_STATE_GET_POT,                 // Send get-POT command
+    DEMO_STATE_WAITING_GET_POT,         // Waiting for get-POT command to complete
+    DEMO_STATE_READ_POT,                // Start reading POT data
+    DEMO_STATE_WAITING_READ_POT,        // Waiting for read of POT data to complete
+    DEMO_STATE_DISPLAY_POT,             // POT data received, display it
+
+    DEMO_STATE_SEND_SET_LED,            // Send set-LED command
+    DEMO_STATE_WAITING_SET_LED,         // Waiting for set-LED command to complete
+    DEMO_STATE_READ_SET_LED_RESP,       // Start reading set-LED response
+    DEMO_STATE_WAITING_LED_RESP,        // Waiting for read of LED response to complete
+    DEMO_STATE_UPDATE_LED_STATE,        // Set-LED command successful, update state.
+
+    DEMO_STATE_ERROR                    // An error has occured
+
+} DEMO_STATE;
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Macros
+// *****************************************************************************
+// *****************************************************************************
+
+// *****************************************************************************
+// *****************************************************************************
+// Global Variables
+// *****************************************************************************
+// *****************************************************************************
+
+BYTE        deviceAddress;  // Address of the device on the USB
+DATA_PACKET DataPacket;     // Data to send to the device
+DEMO_STATE  DemoState;      // Current state of the demo application
+WORD        SwitchState;    // Bitmap of Switch states (only 3 & 6 are used)
+
+//******************************************************************************
+//******************************************************************************
+// Local Routines
+//******************************************************************************
+//******************************************************************************
+
+
+/*************************************************************************
+ * Function:        CheckForNewAttach
+ *
+ * Preconditions:   None
+ *
+ * Input:           None
+ *
+ * Output:          deviceAddress (global)
+ *                  Updates the device address when an attach is found.
+ *
+ * Returns:         TRUE if a new device has been attached.  FALSE,
+ *                  otherwise.
+ *
+ * Side Effects:    Prints attach message
+ *
+ * Overview:        This routine checks to see if a new device has been
+ *                  attached.  If it has, it records the address.
+ *************************************************************************/
+
+BOOL CheckForNewAttach ( void )
+{
+    // Try to get the device address, if we don't have one.
+    if (deviceAddress == 0)
+    {
+        GENERIC_DEVICE_ID DevID;
+
+        DevID.vid   = 0x04D8;
+        DevID.pid   = 0x000C;
+        #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
+            DevID.serialNumberLength = 0;
+            DevID.serialNumber = NULL;
+        #endif
+
+        if (USBHostGenericGetDeviceAddress(&DevID))
+        {
+            deviceAddress = DevID.deviceAddress;
+            printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", deviceAddress );
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+
+} // CheckForNewAttach
+
+
+/*************************************************************************
+ * Function:        ValidateAndDisplayDeviceFwVersion
+ *
+ * Preconditions:   Assumes the device FW Version response packet has been
+ *                  received.
+ *
+ * Input:           None
+ *
+ * Output:          None
+ *
+ * Returns:         TRUE if the Device FW data is valid, FALSE if not.
+ *
+ * Side Effects:    Displays a message on the serial port.
+ *
+ * Overview:        Validates data in the packet buffer against expected
+ *                  device firmware version and displays it on the serial
+ *                  port.
+ *************************************************************************/
+
+BOOL ValidateAndDisplayDeviceFwVersion ( void )
+{
+    if ( USBHostGenericGetRxLength(deviceAddress) == 4             &&
+         DataPacket.CMD                   == READ_VERSION          &&
+         DataPacket._byte[3]              >= DEMO_FW_MAJOR_VERSION    )
+    {
+        // Display device FW version on terminal
+        printf( "Device firmware version %d.%d\r\n",  DataPacket._byte[3], DataPacket._byte[4] );
+        return TRUE;
+    }
+    else
+    {
+        printf( "Device Firmware Version Error!\r\n" );
+        return FALSE;
+    }
+
+} // ValidateAndDisplayDeviceFwVersion
+
+
+/*************************************************************************
+ * Function:        Switch3WasPressed & Switch6WasPressed
+ *
+ * Preconditions:   Assumes SwitchState & Switches have been initialized
+ *
+ * Input:           None
+ *
+ * Output:          None
+ *
+ * Returns:         TRUE if the switch has been pressed, FALSE otherwise
+ *
+ * Side Effects:    SwitchState has been updated
+ *
+ * Overview:        Determines if the switched named has been pressed
+ *                  since last time the routine was called.
+ *************************************************************************/
+
+BOOL Switch3WasPressed(void)
+{
+    return FALSE;                       // Was not pressed
+
+} // Switch3WasPressed
+
+BOOL Switch6WasPressed(void)
+{
+    return FALSE;                       // Was not pressed
+
+}//end Switch6WasPressed
+
+
+/******************************************************************************
+ * Function:        void BlinkStatus(void)
+ *
+ * PreCondition:    None
+ *
+ * Input:           None
+ *
+ * Output:          None
+ *
+ * Side Effects:    None
+ *
+ * Overview:        BlinkStatus turns on and off LEDs corresponding to
+ *                  the demo state.
+ *
+ * Note:
+ *****************************************************************************/
+void BlinkStatus(void)
+{
+}//end BlinkStatus
+
+
+/*************************************************************************
+ * Function:        ManageDemoState
+ *
+ * Preconditions:   The DemoState global variable must be initialized to
+ *                  DEMO_STATE_IDLE (0).  (This occurs on reset.)
+ *
+ * Input:           DemoState (global)
+ *                  Actions selected based value of DemoState on function
+ *                  entry.
+ *
+ *                  deviceAddress (global)
+ *                  May use device address to access device, depending on
+ *                  state.
+ *
+ *                  DataPacket (global)
+ *                  May read data from packet buffer, depending on state.
+ *
+ * Output:          DemoState (global)
+ *                  Updates demo state as appropriate.
+ *
+ *                  DataPacket (global)
+ *                  May cause data in the packet buffer to be updated,
+ *                  depending on state.
+ *
+ * Returns:         None
+ *
+ * Side Effects:    Depend on state transition
+ *
+ * Overview:        This routine maintains the state of the application,
+ *                  updateing global data and taking actions as necessary
+ *                  to maintain the custom demo operations.
+ *************************************************************************/
+void ManageDemoState ( void )
+{
+    BYTE RetVal;
+
+    BlinkStatus();
+
+    // Watch for device timeouts
+//    if (MSTimerGetTime() > DEMO_TIMEOUT_LIMIT)
+//    {
+//        if (DemoState == DEMO_STATE_IDLE)
+//        {
+//        }
+//        else
+//        {
+//            printf( "Device Time-out Error!\r\n" );
+//            DemoState = DEMO_STATE_ERROR;
+//        }
+//    }
+
+    // Watch for device detaching
+    if (USBHostGenericDeviceDetached(deviceAddress) && deviceAddress != 0)
+    {
+        printf( "Generic demo device detached - polled\r\n" );
+        DemoState = DEMO_INITIALIZE;
+        deviceAddress   = 0;
+    }
+
+    switch (DemoState)
+    {
+    case DEMO_INITIALIZE:
+        DemoState = DEMO_STATE_IDLE;
+        break;
+
+    /** Idle State:  Loops here until attach **/
+    case DEMO_STATE_IDLE:
+        if (CheckForNewAttach())
+        {
+            DemoState = DEMO_STATE_GET_DEV_VERSION;
+        }
+        break;
+
+    /** Sequence: Read Dev FW Version **/
+    case DEMO_STATE_GET_DEV_VERSION:
+        // Send the Read Version command
+        DataPacket.CMD = READ_VERSION;
+        DataPacket.len = 2;
+        if (!USBHostGenericTxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericWrite(deviceAddress, &DataPacket, 2)) == USB_SUCCESS )
+            {
+                DemoState = DEMO_STATE_WAITING_VER_REQ;
+            }
+            else
+            {
+                printf( "1 Device Write Error 0x%04X\r\n", RetVal );
+                while(1){}
+                
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_VER_REQ:
+        if (!USBHostGenericTxIsBusy(deviceAddress) )
+            DemoState = DEMO_STATE_READ_DEV_VERSION;
+        break;
+
+    case DEMO_STATE_READ_DEV_VERSION:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericRead(deviceAddress, &DataPacket, 4)) == USB_SUCCESS )
+            {
+                DemoState = DEMO_STATE_WAITING_READ_VER;
+            }
+            else
+            {
+                printf( "1 Device Read Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_READ_VER:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+            DemoState = DEMO_STATE_VERIFY_DEV_FW_VER;
+        break;
+
+    case DEMO_STATE_VERIFY_DEV_FW_VER:
+        if (ValidateAndDisplayDeviceFwVersion())
+            DemoState = DEMO_STATE_GET_TEMPERATURE;
+        else
+            DemoState = DEMO_STATE_ERROR;
+        break;
+
+    /** Sequence: Read Temperature Sensor Data **/
+    case DEMO_STATE_GET_TEMPERATURE:
+        // Send the Read Temperature command
+        DataPacket.CMD = RD_TEMP;
+        DataPacket.len = 2;
+        if (!USBHostGenericTxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericWrite(deviceAddress, &DataPacket, 2)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_GET_TEMP;
+            }
+            else
+            {
+                printf( "2 Device Write Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_GET_TEMP:
+        if (!USBHostGenericTxIsBusy(deviceAddress) )
+        {
+            DemoState = DEMO_STATE_READ_TEMPERATURE;
+        }
+        break;
+
+    case DEMO_STATE_READ_TEMPERATURE:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericRead(deviceAddress, &DataPacket, 3)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_READ_TEMP;
+            }
+            else
+            {
+                printf( "2 Device Read Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_READ_TEMP:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+        {
+            DemoState = DEMO_STATE_DISPLAY_TEMPERATURE;
+        }
+        break;
+
+    case DEMO_STATE_DISPLAY_TEMPERATURE:
+        DemoState = DEMO_STATE_GET_POT;
+        break;
+
+    /** Sequence: Read POT Sensor Data **/
+    case DEMO_STATE_GET_POT:
+        // Send the Read POT command
+        DataPacket.CMD = RD_POT;
+        DataPacket.len = 2;
+        if (!USBHostGenericTxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericWrite(deviceAddress, &DataPacket, 2)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_GET_POT;
+            }
+            else
+            {
+                printf( "3 Device Write Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_GET_POT:
+        if (!USBHostGenericTxIsBusy(deviceAddress) )
+            DemoState = DEMO_STATE_READ_POT;
+        break;
+
+    case DEMO_STATE_READ_POT:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericRead(deviceAddress, &DataPacket, 3)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_READ_POT;
+            }
+            else
+            {
+                printf( "3 Device Read Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_READ_POT:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+            DemoState = DEMO_STATE_DISPLAY_POT;
+        break;
+
+    case DEMO_STATE_DISPLAY_POT:
+        DemoState = DEMO_STATE_SEND_SET_LED;
+        break;
+
+    /** Sequence:  Update LEDs **/
+    case DEMO_STATE_SEND_SET_LED:
+        // Send the set-LED command
+        DataPacket.CMD = UPDATE_LED;
+        DataPacket.len = 3;
+        if (Switch3WasPressed())
+        {
+            DataPacket.led_num    = 3;  // LED 3 on original PIC18 FS USB board
+        }
+        else if (Switch6WasPressed())
+        {
+            DataPacket.led_num    = 4;  // LED 4 on original PIC18 FS USB board
+        }
+        else
+        {
+            DemoState = DEMO_STATE_GET_TEMPERATURE;
+            break;
+        }
+        if (!USBHostGenericTxIsBusy(deviceAddress))
+        {
+            if ( (RetVal=USBHostGenericWrite(deviceAddress, &DataPacket, 3)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_SET_LED;
+            }
+            else
+            {
+                printf( "4 Device Write Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_SET_LED:
+        if (!USBHostGenericTxIsBusy(deviceAddress) )
+            DemoState = DEMO_STATE_READ_SET_LED_RESP;
+        break;
+
+    case DEMO_STATE_READ_SET_LED_RESP:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+        {
+            DataPacket.CMD = CMD_INVALID;
+            if ( (RetVal=USBHostGenericRead(deviceAddress, &DataPacket, 1)) == USB_SUCCESS)
+            {
+                DemoState = DEMO_STATE_WAITING_LED_RESP;
+            }
+            else
+            {
+                printf( "4 Device Read Error 0x%04X\r\n", RetVal );
+            }
+        }
+        break;
+
+    case DEMO_STATE_WAITING_LED_RESP:
+        if (!USBHostGenericRxIsBusy(deviceAddress))
+            DemoState = DEMO_STATE_UPDATE_LED_STATE;
+        break;
+
+    case DEMO_STATE_UPDATE_LED_STATE:
+        if (DataPacket.CMD == UPDATE_LED)   // CMD updated by read from device
+        {
+            if (DataPacket.led_num == 3)    // led_num left-over from set-LED command send
+            {
+            }
+            else if (DataPacket.led_num == 4)
+            {
+            }
+        }
+        DemoState = DEMO_STATE_GET_TEMPERATURE;
+        break;
+
+    /** Error state:  Hold here until detached **/
+    case DEMO_STATE_ERROR:                          // To Do: Flash LEDs
+        break;
+
+    default:
+        DemoState = DEMO_INITIALIZE;
+        break;
+    }
+
+    DelayMs(1); // 1ms delay
+
+} // ManageDemoState
+
+
+//******************************************************************************
+//******************************************************************************
+// USB Support Functions
+//******************************************************************************
+//******************************************************************************
+
+/*************************************************************************
+ * Function:        USB_ApplicationEventHandler
+ *
+ * Preconditions:   The USB must be initialized.
+ *
+ * Input:           event       Identifies the bus event that occured
+ *
+ *                  data        Pointer to event-specific data
+ *
+ *                  size        Size of the event-specific data
+ *
+ * Output:          deviceAddress (global)
+ *                  Updates device address when an attach or detach occurs.
+ *
+ *                  DemoState (global)
+ *                  Updates the demo state as appropriate when events occur.
+ *
+ * Returns:         TRUE if the event was handled, FALSE if not
+ *
+ * Side Effects:    Event-specific actions have been taken.
+ *
+ * Overview:        This routine is called by the Host layer or client
+ *                  driver to notify the application of events that occur.
+ *                  If the event is recognized, it is handled and the
+ *                  routine returns TRUE.  Otherwise, it is ignored (or
+ *                  just "sniffed" and the routine returns FALSE.
+ *************************************************************************/
+
+BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DWORD size )
+{
+    #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
+        BYTE i;
+    #endif
+
+    // Handle specific events.
+    switch ( (INT)event )
+    {
+        case EVENT_GENERIC_ATTACH:
+            if (size == sizeof(GENERIC_DEVICE_ID))
+            {
+                deviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
+                DemoState = DEMO_STATE_GET_DEV_VERSION;
+                printf( "Generic demo device attached - event, deviceAddress=%d\r\n", deviceAddress );
+                #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
+                    for (i=1; i<((GENERIC_DEVICE_ID *)data)->serialNumberLength; i++)
+                    {
+                        printf( "%c", ((GENERIC_DEVICE_ID *)data)->serialNumber[i] );
+                    }
+                #endif
+                printf( "\r\n" );
+                return TRUE;
+            }
+            break;
+
+        case EVENT_GENERIC_DETACH:
+            deviceAddress   = 0;
+            DemoState = DEMO_INITIALIZE;
+            printf( "Generic demo device detached - event\r\n" );
+            return TRUE;
+
+        case EVENT_GENERIC_TX_DONE:           // The main state machine will poll the driver.
+        case EVENT_GENERIC_RX_DONE:
+            return TRUE;
+
+        case EVENT_VBUS_REQUEST_POWER:
+            // We'll let anything attach.
+            return TRUE;
+
+        case EVENT_VBUS_RELEASE_POWER:
+            // We aren't keeping track of power.
+            return TRUE;
+
+        case EVENT_HUB_ATTACH:
+            printf( "\r\n***** USB Error - hubs are not supported *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_UNSUPPORTED_DEVICE:
+            printf( "\r\n***** USB Error - device is not supported *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_CANNOT_ENUMERATE:
+            printf( "\r\n***** USB Error - cannot enumerate device *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_CLIENT_INIT_ERROR:
+            printf( "\r\n***** USB Error - client driver initialization error *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_OUT_OF_MEMORY:
+            printf( "\r\n***** USB Error - out of heap memory *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_UNSPECIFIED_ERROR:   // This should never be generated.
+            printf( "\r\n***** USB Error - unspecified *****\r\n" );
+            return TRUE;
+            break;
+
+        case EVENT_SUSPEND:
+        case EVENT_DETACH:
+        case EVENT_RESUME:
+        case EVENT_BUS_ERROR:
+            return TRUE;
+            break;
+
+        default:
+            break;
+    }
+
+    return FALSE;
+
+} // USB_ApplicationEventHandler
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// USB TEST Microchip End
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// USB TEST YTS
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+#if 0
 #include "../Microchip/HardwareProfile.h"
 #include "../Microchip/Include/GenericTypeDefs.h"
 #include "../Microchip/Include/USB/usb.h"
@@ -105,6 +744,7 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Microchip/Include/timer.h"
 #include "user.h"
 
+#if 1
 //for storing a BD_address of PC (6 bytes)
 #define PROG_ADDR1 0xA700
 #define PROG_ADDR2 0xA702
@@ -348,7 +988,8 @@ unsigned char att5[4][31]=
      0x09,0x06,0x00,0x09,0x02,0x04,0x28,0x01,0x09,0x02,0x05,0x09,0x00,0x02,0x00}
 };
 
-
+#endif
+#if 1
 BOOL InitializeSystem ( void )
 {
     // Set Default demo state
@@ -358,8 +999,9 @@ BOOL InitializeSystem ( void )
 	ConnectSwitch=PORTBbits.RB4;
     return TRUE;
 }
+#endif
 
-
+#if 1
 /*************************************************************************
  * Function:        CheckForNewAttach
  *
@@ -400,12 +1042,12 @@ BOOL CheckForNewAttach ( void )
             return TRUE;
         }
     }
-
     return FALSE;
 
 } // CheckForNewAttach
+#endif
 
-
+#if 1
 /*************************************************************************
  * Function:        ManageDemoState
  *
@@ -1586,8 +2228,9 @@ void ManageDemoState ( void )
     DelayMs(1); // 1ms delay
 
 } // ManageDemoState
+#endif
 
-
+#if 1
 //******************************************************************************
 //******************************************************************************
 // USB Support Functions
@@ -1624,6 +2267,9 @@ void ManageDemoState ( void )
 
 BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DWORD size )
 {
+    printf( "USB_ApplicationEventHandler\r\n" );
+    Uart1Flush();
+
     #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
         BYTE i;
     #endif
@@ -1714,13 +2360,13 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
 
 
 
-
+#endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// END USB TEST
+// END USB TEST YTS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+#endif
 
 /**
  * INT0割り込み
@@ -1754,17 +2400,26 @@ void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
  *
  */
 int main(void) {
-            
     IsResetFromDeepSleep();
+
     PLL_INITIALIZE();
-
     TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
-
     Uart1Init();
+    // Set Default demo state
+    DemoState = DEMO_INITIALIZE;
 
     printf( "\r\nProtoType1.\r\n");
     Uart1Flush();
 
+    if ( USBHostInit(0) == TRUE ) {
+        printf( "\r\n\r\n***** USB Custom Demo App Initialized *****\r\n\r\n" );
+    } else {
+        printf( "\r\n\r\nCould not initialize USB Custom Demo App - USB.  Halting.\r\n\r\n" );
+        while (1);
+    }
+
+
+    
 #if 1
     // タイマ1の初期化複数のパラメータを結合する際に「&」を用いるように
     // マクロが定義されているが、この場合、デフォルトがデバイスのデフォ
@@ -1783,7 +2438,6 @@ int main(void) {
 	CNPU2=0x80;	//pin#16 pull-up CN23
 	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
 #endif
-
     
     while( 1 ) {
         static int c = 0;
@@ -1804,7 +2458,8 @@ int main(void) {
             }
 #endif
             num ++;
-            
+
+                    
 #if 0
             // 通信速度を越えて出力する場合にはFlushでキュー内の送信待
             // ちをしないととキューが溢れる。暴走はしないが、文字抜けす
@@ -1812,6 +2467,7 @@ int main(void) {
             printf( "   Message Number %d\n", num );
             Uart1Flush();
 #endif
+            
 #if 0
             // もしくは以下のようにキューが空でないとメッセージを表示し
             // ないようにしてもよい
@@ -1819,10 +2475,21 @@ int main(void) {
                 printf( "   Message Number %d\n", num );
             }
 #endif
+            
+            // Maintain USB Host State
+            USBHostTasks();
+            // Maintain Demo Application State
+            ManageDemoState();
 
+            Uart1Flush();
+
+#if 0
             if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
+                // printf( "Going into Idle.\n" );
+                Uart1Flush();
                 Idle();
             }
+#endif
         }
     }
     return 0;

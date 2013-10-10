@@ -4,6 +4,11 @@
 #define GetPeripheralClock()        (GetSystemClock())
 #define GetInstructionClock()       (GetSystemClock()/2)
 
-#define BAUDRATE2       115200//57600 //19200
-#define BRG_DIV2        4 //16
-#define BRGH2           1 //0
+#define BAUDRATE2       38400
+#define BRG_DIV2        16
+#define BRGH2           0
+
+#define DEMO_TIMEOUT_LIMIT  0xF000
+
+#include <p24fxxxx.h>
+

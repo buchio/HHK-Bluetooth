@@ -47,7 +47,7 @@
 
 #include "queue.h"
 
-QUEUE_INIT(UART_TX, 6, unsigned char ); ///< 送信キュー サイズ：64バイト
+QUEUE_INIT(UART_TX, 9, unsigned char ); ///< 送信キュー サイズ：512バイト
 QUEUE_INIT(UART_RX, 7, unsigned char ); ///< 受信キュー サイズ：128バイト
 
 #define BAUD_RATE       38400

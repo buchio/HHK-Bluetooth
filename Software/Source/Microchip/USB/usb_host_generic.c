@@ -36,8 +36,8 @@ Summary:
 Software License Agreement
 
 The software supplied herewith by Microchip Technology Incorporated
-(the “Company”) for its PICmicro® Microcontroller is intended and
-supplied to you, the Company’s customer, for use solely and
+(the ï¿½Companyï¿½) for its PICmicroï¿½ Microcontroller is intended and
+supplied to you, the Companyï¿½s customer, for use solely and
 exclusively on Microchip PICmicro Microcontroller products. The
 software is owned by the Company and/or its supplier, and is
 protected under applicable copyright laws. All rights are reserved.
@@ -46,7 +46,7 @@ user to criminal sanctions under applicable laws, as well as to
 civil liability for the breach of the terms and conditions of this
 license.
 
-THIS SOFTWARE IS PROVIDED IN AN “AS IS” CONDITION. NO WARRANTIES,
+THIS SOFTWARE IS PROVIDED IN AN ï¿½AS ISï¿½ CONDITION. NO WARRANTIES,
 WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED
 TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
 PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. THE COMPANY SHALL NOT,
@@ -63,13 +63,14 @@ BC/KO       25-Dec-2007 First release
 #include <stdlib.h>
 #include <string.h>
 #include "GenericTypeDefs.h"
-#include "../../Include/USB/usb.h"
-#include "../../Include/USB/usb_host_generic.h"
+#include "../Include/USB/usb.h"
+#include "../Include/USB/usb_host_generic.h"
 
 //#define DEBUG_MODE
 #ifdef DEBUG_MODE
     #include "uart2.h"
 #endif
+
 
 // *****************************************************************************
 // *****************************************************************************
@@ -307,18 +308,11 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
 
             if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP) )
             {
-                gc_DevData.flags.rx1Busy = 0;
+                gc_DevData.flags.rxBusy = 0;
                 gc_DevData.rxLength = dataCount;
-                USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_RX1_DONE, &dataCount, sizeof(DWORD) );
+                USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_RX_DONE, &dataCount, sizeof(DWORD) );
             }
-			else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP2) )
-            {
-                gc_DevData.flags.rx2Busy = 0;
-                gc_DevData.rxLength = dataCount;
-                USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_RX2_DONE, &dataCount, sizeof(DWORD) );
-            }
-            else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP) ||
-                      ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP2))
+            else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP) )
             {
                 gc_DevData.flags.txBusy = 0;
                 USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_TX_DONE, &dataCount, sizeof(DWORD) );
@@ -527,15 +521,15 @@ BYTE USBHostGenericRead( BYTE deviceAddress, void *buffer, DWORD length )
 
     // Validate the call
     if (!API_VALID(deviceAddress)) return USB_INVALID_STATE;
-    if (gc_DevData.flags.rx1Busy)   return USB_BUSY;
+    if (gc_DevData.flags.rxBusy)   return USB_BUSY;
 
     // Set the busy flag, clear the count and start a new IN transfer.
-    gc_DevData.flags.rx1Busy = 1;
+    gc_DevData.flags.rxBusy = 1;
     gc_DevData.rxLength = 0;
     RetVal = USBHostRead( deviceAddress, USB_IN_EP|USB_GENERIC_EP, (BYTE *)buffer, length );
     if (RetVal != USB_SUCCESS)
     {
-        gc_DevData.flags.rx1Busy = 0;    // Clear flag to allow re-try
+        gc_DevData.flags.rxBusy = 0;    // Clear flag to allow re-try
     }
 
     return RetVal;
@@ -848,68 +842,7 @@ BYTE USBHostGenericWrite( BYTE deviceAddress, void *buffer, DWORD length )
 
 } // USBHostGenericWrite
 
-//YTS added three functions below
 
-BYTE USBHostGenericClassRequest( BYTE deviceAddress, BYTE *data, WORD wLength )
-{
-    BYTE RetVal;
-
-    // Validate the call
-    if (!API_VALID(deviceAddress)) return USB_INVALID_STATE;
-    if (gc_DevData.flags.txBusy)   return USB_BUSY;
-
-    // Set the busy flag and start a new OUT transfer.
-//    gc_DevData.flags.txBusy = 1;
-    RetVal = USBHostIssueDeviceRequest( deviceAddress, 0x21,0, 0, 0, wLength, data, USB_DEVICE_REQUEST_SET,0x00);
-    if (RetVal != USB_SUCCESS)
-    {
-        gc_DevData.flags.txBusy = 0;    // Clear flag to allow re-try
-    }
-
-    return RetVal;
-
-} // USBHostGenericClassRequest
-
-BYTE USBHostGenericAclWrite( BYTE deviceAddress, void *buffer, DWORD length )
-{
-    BYTE RetVal;
-
-    // Validate the call
-    if (!API_VALID(deviceAddress)) return USB_INVALID_STATE;
-    if (gc_DevData.flags.txBusy)   return USB_BUSY;
-
-    // Set the busy flag and start a new OUT transfer.
-    gc_DevData.flags.txBusy = 1;
-    RetVal = USBHostWrite( deviceAddress, USB_OUT_EP|USB_GENERIC_EP2, (BYTE *)buffer, length );
-    if (RetVal != USB_SUCCESS)
-    {
-        gc_DevData.flags.txBusy = 0;    // Clear flag to allow re-try
-    }
-
-    return RetVal;
-
-} // USBHostGenericAclWrite
-
-BYTE USBHostGenericAclRead( BYTE deviceAddress, void *buffer, DWORD length )
-{
-    BYTE RetVal;
-
-    // Validate the call
-    if (!API_VALID(deviceAddress)) return USB_INVALID_STATE;
-    if (gc_DevData.flags.rx2Busy)   return USB_BUSY;
-
-    // Set the busy flag, clear the count and start a new IN transfer.
-    gc_DevData.flags.rx2Busy = 1;
-	gc_DevData.rxLength = 0;
-    RetVal = USBHostRead( deviceAddress, USB_IN_EP|USB_GENERIC_EP2, (BYTE *)buffer, length );
-    if (RetVal != USB_SUCCESS)
-    {
-        gc_DevData.flags.rx2Busy = 0;    // Clear flag to allow re-try
-    }
-
-    return RetVal;
-
-} // USBHostGenericAclRead
 /*************************************************************************
  * EOF usb_client_generic.c
  */

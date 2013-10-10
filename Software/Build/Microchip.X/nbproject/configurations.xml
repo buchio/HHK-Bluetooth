@@ -37,14 +37,10 @@
         <itemPath>../../Source/Microchip/Include/uart2.h</itemPath>
       </logicalFolder>
       <logicalFolder name="USB" displayName="USB" projectFiles="true">
-        <logicalFolder name="Generic Host Driver"
-                       displayName="Generic Host Driver"
-                       projectFiles="true">
-          <itemPath>../../Source/Microchip/USB/Generic Host Driver/usb_host_generic.c</itemPath>
-        </logicalFolder>
         <itemPath>../../Source/Microchip/USB/usb_config.c</itemPath>
         <itemPath>../../Source/Microchip/USB/usb_hal_pic24.c</itemPath>
         <itemPath>../../Source/Microchip/USB/usb_host.c</itemPath>
+        <itemPath>../../Source/Microchip/USB/usb_host_generic.c</itemPath>
       </logicalFolder>
       <itemPath>../../Source/Microchip/HardwareProfile.h</itemPath>
     </logicalFolder>
