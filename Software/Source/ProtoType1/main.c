@@ -99,7 +99,6 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Microchip/Include/USB/usb_host_generic.h"
 #include "../Microchip/Include/timer.h"
 
-#define DATA_PACKET_LENGTH  64
 
 /// \defgroup USB USBホスト処理
 /// @{
@@ -109,32 +108,54 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 ///
 typedef enum
 {
-    BT_INITIALIZE = 0,                // Initialize the app when a device is attached
-    BT_STATE_IDLE,                    // Inactive State
-    BT_STATE_ATTACHED,                // Attached.
-    BT_STATE_ERROR                    // An error has occured
+    BT_INITIALIZE = 0,                ///< Initialize the app when a device is attached
+    BT_STATE_IDLE,                    ///< Inactive State
+    BT_STATE_ATTACHED,                ///< Attached.
+
+    BT_STATE_WRITE_CLASS,
+    BT_STATE_READ_EP1,
+    BT_STATE_READ_CLASS_WAITING,
+    BT_STATE_WRITE_ACL,
+    BT_STATE_READ_ACL_HCI,
+    BT_STATE_READ_ACL_WAITING,
+    BT_STATE_READ_HCI_WAITING,
+    BT_STATE_READ_HCI,
+
+    BT_STATE_ERROR,                   ///< An error has occured
+    BT_STATE_END
 } BT_STATE;
 
+///
+/// Hci States
+///
+typedef enum
+{
+	HCI_CMD_RESET = 0,                ///< Initialize the hci when a device is attached
+    HCI_CMD_RESET_END,
+    HCI_STATE_END
+} HCI_STATE;
 
-static BYTE        deviceAddress;  // Address of the device on the USB
-static BT_STATE    BtState;      // Current state of Bluetooth dongle controler.
+
+static BYTE        deviceAddress;  ///< Address of the device on the USB
+static BT_STATE    btState;        ///< Current state of Bluetooth dongle controler.
+static HCI_STATE   hciState;       ///< Current state of the demo application
+
+#define DATA_PACKET_LENGTH  64
+
+WORD data_size;
+unsigned char buf1[DATA_PACKET_LENGTH];
+
 
 static BOOL CheckForNewAttach ( void )
 {
     // Try to get the device address, if we don't have one.
-    if (deviceAddress == 0)
-    {
+    if (deviceAddress == 0) {
         GENERIC_DEVICE_ID DevID;
 
         DevID.vid   = 0x04D8;
         DevID.pid   = 0x000C;
-        #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-            DevID.serialNumberLength = 0;
-            DevID.serialNumber = NULL;
-        #endif
 
-        if (USBHostGenericGetDeviceAddress(&DevID))
-        {
+        if (USBHostGenericGetDeviceAddress(&DevID)) {
             deviceAddress = DevID.deviceAddress;
             printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", deviceAddress );
             return TRUE;
@@ -145,38 +166,101 @@ static BOOL CheckForNewAttach ( void )
 
 }
 
+static void ManageHciState( void )
+{
+    static HCI_STATE recentHciState = HCI_STATE_END;
+    if( recentHciState != hciState ) {
+        printf( "hciState Changed %d -> %d\r\n", recentHciState, hciState );
+        recentHciState = hciState;
+    }
+    
+    switch (hciState) {
+        case HCI_CMD_RESET:
+            buf1[0]=0x03;
+            buf1[1]=0x0c;
+            buf1[2]=0;
+            data_size=3;
+            btState  = BT_STATE_WRITE_CLASS;
+            hciState = HCI_CMD_RESET_END;
+            break;
+        case HCI_CMD_RESET_END:
+            break;
+        default:
+            break;
+    }
+}
+
 static void ManageBluetoothState ( void )
 {
     BYTE RetVal;
+    static BT_STATE recentBtState = BT_STATE_END;
+    if( recentBtState != btState ) {
+        printf( "btState Changed %d -> %d\r\n", recentBtState, btState );
+        recentBtState = btState;
+    }
 
     // Watch for device detaching
     if (USBHostGenericDeviceDetached(deviceAddress) && deviceAddress != 0) {
         printf( "Generic demo device detached - polled\r\n" );
-        BtState = BT_INITIALIZE;
+        btState  = BT_INITIALIZE;
+		hciState = HCI_CMD_RESET;
         deviceAddress   = 0;
     }
 
-    switch (BtState) {
-    case BT_INITIALIZE:
-        BtState = BT_STATE_IDLE;
-        break;
+    switch (btState) {
+        case BT_INITIALIZE:
+            btState = BT_STATE_IDLE;
+            break;
 
-    /** Idle State:  Loops here until attach **/
-    case BT_STATE_IDLE:
-        if (CheckForNewAttach()) {
-            BtState = BT_STATE_ATTACHED;
-        }
-        break;
+            /** Idle State:  Loops here until attach **/
+        case BT_STATE_IDLE:
+            if (CheckForNewAttach()) {
+                btState = BT_STATE_ATTACHED;
+            }
+            break;
 
-    case BT_STATE_ATTACHED:
-        break;
+        case BT_STATE_ATTACHED:
+            ManageHciState();
+            break;
 
-    case BT_STATE_ERROR:
-        break;
+        case BT_STATE_WRITE_CLASS:
+            if (!USBHostGenericTxIsBusy(deviceAddress)) {
+                if ( (RetVal=USBHostGenericClassRequest( deviceAddress, buf1, data_size )) == USB_SUCCESS ) {
+                    printf( "HCI COMMAND SENT\r\n" );	
+                    btState = BT_STATE_ATTACHED;
+                } else {
+                    printf( "Write Class Error !\r\n" );	
+                }
+            }
+            break;
+            
+        case BT_STATE_READ_EP1:
+            break;
+            
+        case BT_STATE_READ_CLASS_WAITING:
+            break;
+            
+        case BT_STATE_WRITE_ACL:
+            break;
+            
+        case BT_STATE_READ_ACL_HCI:
+            break;
+            
+        case BT_STATE_READ_ACL_WAITING:
+            break;
+            
+        case BT_STATE_READ_HCI_WAITING:
+            break;
+            
+        case BT_STATE_READ_HCI:
+            break;
 
-    default:
-        BtState = BT_INITIALIZE;
-        break;
+        case BT_STATE_ERROR:
+            break;
+
+        default:
+            btState = BT_INITIALIZE;
+            break;
     }
 
     DelayMs(1); // 1ms delay
@@ -200,7 +284,7 @@ static void ManageBluetoothState ( void )
  * Output:          deviceAddress (global)
  *                  Updates device address when an attach or detach occurs.
  *
- *                  BtState (global)
+ *                  btState (global)
  *                  Updates the bluetooth dongle controler state as appropriate when events occur.
  *
  * Side Effects:    Event-specific actions have been taken.
@@ -224,7 +308,8 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
             if (size == sizeof(GENERIC_DEVICE_ID))
             {
                 deviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
-                BtState = BT_STATE_ATTACHED;
+                btState  = BT_STATE_ATTACHED;
+                hciState = HCI_CMD_RESET;
                 printf( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", deviceAddress );
                 return TRUE;
             }
@@ -232,12 +317,13 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
 
         case EVENT_GENERIC_DETACH:
             deviceAddress   = 0;
-            BtState = BT_INITIALIZE;
+            btState = BT_INITIALIZE;
             printf( "Bluetooth dongle detached - event\r\n" );
             return TRUE;
 
         case EVENT_GENERIC_TX_DONE:           // The main state machine will poll the driver.
-        case EVENT_GENERIC_RX_DONE:
+        case EVENT_GENERIC_RX1_DONE:
+        case EVENT_GENERIC_RX2_DONE:
             return TRUE;
 
         case EVENT_VBUS_REQUEST_POWER:
@@ -1972,9 +2058,12 @@ int main(void) {
     PLL_INITIALIZE();
     TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
     Uart1Init();
-    // Set Default Bluetooth dongle controler state
-    BtState = BT_INITIALIZE;
 
+    // Set Default Bluetooth dongle controler state
+    btState = BT_INITIALIZE;
+    hciState = HCI_CMD_RESET;
+    
+    
     printf( "\r\nProtoType1.\r\n");
     Uart1Flush();
 
