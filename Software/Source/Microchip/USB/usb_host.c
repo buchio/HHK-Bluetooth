@@ -2923,6 +2923,12 @@ BOOL _USB_FindDeviceLevelClientDriver( void )
     WORD                   i;
     USB_DEVICE_DESCRIPTOR *pDesc = (USB_DEVICE_DESCRIPTOR *)pDeviceDescriptor;
 
+    printf( "HOST:  Device Class:    0x%02X\r\n", pDesc->bDeviceClass);
+    printf( "HOST:  Device SubClass: 0x%02X\r\n", pDesc->bDeviceSubClass );
+    printf( "HOST:  Device Protocol: 0x%02X\r\n", pDesc->bDeviceProtocol );
+    printf( "HOST:  Device VID:      0x%04X\r\n", pDesc->idVendor );
+    printf( "HOST:  Device PID:      0x%04X\r\n", pDesc->idProduct );
+
     // Scan TPL
     i = 0;
     usbDeviceInfo.flags.bfUseDeviceClientDriver = 0;

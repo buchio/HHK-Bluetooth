@@ -47,11 +47,10 @@
 
 #include "queue.h"
 
+#include "../Microchip/HardwareProfile.h"
+
 QUEUE_INIT(UART_TX, 9, unsigned char ); ///< 送信キュー サイズ：512バイト
 QUEUE_INIT(UART_RX, 7, unsigned char ); ///< 受信キュー サイズ：128バイト
-
-#define BAUD_RATE       38400
-#define F_CPU           16000000UL  // メインクロック周波数 16MHz
 
 /// 
 /// UART1送信割り込み
@@ -101,7 +100,7 @@ void Uart1Init()
     RPINR18bits.U1RXR = 8;// UART1 RX input = RP8
     RPOR4bits.RP9R = 3;   // UART TX output = RP9
 
-    U1BRG = F_CPU/16/BAUD_RATE-1;// 38400bps
+    U1BRG = (((GetSystemClock()/2)+(BRG_DIV2/2*BAUDRATE2))/BRG_DIV2/BAUDRATE2-1);
 
     IPC3bits.U1TXIP2=1; // Set Uart TX Interrupt Priority
     IPC3bits.U1TXIP1=0;

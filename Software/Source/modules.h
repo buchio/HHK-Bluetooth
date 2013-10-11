@@ -32,7 +32,7 @@
 #ifndef COMMON_H
 #define	COMMON_H
 
-/// \defgroup Modules
+/// \defgroup Modules ソフトウェアモジュール
 /// @{
 
 /// \defgroup PLL PLL操作
