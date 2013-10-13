@@ -134,10 +134,6 @@ typedef struct _GENERIC_DEVICE_ID
 {
     WORD        vid;                    // Vendor ID of the device
     WORD        pid;                    // Product ID of the device
-    #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-        WORD   *serialNumber;           // Pointer to the Unicode serial number string
-        BYTE    serialNumberLength;     // Length of the serial number string (in Unicode characters)
-    #endif
     BYTE        deviceAddress;          // Address of the device on the USB
 } GENERIC_DEVICE_ID;
 
@@ -168,9 +164,6 @@ typedef struct _GENERIC_DEVICE
             BYTE txBusy         : 1;    // Driver busy transmitting data
             BYTE rx1Busy        : 1;    // Driver busy receiving data
             BYTE rx2Busy        : 1;    // Driver busy receiving data
-            #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-                BYTE serialNumberValid    : 1;    // Serial number is valid
-            #endif
         };
     } flags;                            // Generic client driver status flags
 
@@ -477,7 +470,6 @@ BYTE USBHostGenericRead( BYTE deviceAddress, void *buffer, DWORD length);
 
 #define USBHostGenericRx1IsBusy(a) ( (API_VALID(a)) ? ((gc_DevData.flags.rx1Busy == 1) ? TRUE : FALSE) : TRUE )
 #define USBHostGenericRx2IsBusy(a) ( (API_VALID(a)) ? ((gc_DevData.flags.rx2Busy == 1) ? TRUE : FALSE) : TRUE )
-//BOOL USBHostGenericRxIsBusy( BYTE deviceAddress );
 
 
 /****************************************************************************

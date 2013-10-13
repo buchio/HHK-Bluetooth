@@ -66,12 +66,6 @@ BC/KO       25-Dec-2007 First release
 #include "../Include/USB/usb.h"
 #include "../Include/USB/usb_host_generic.h"
 
-//#define DEBUG_MODE
-#ifdef DEBUG_MODE
-    #include "uart2.h"
-#endif
-
-
 // *****************************************************************************
 // *****************************************************************************
 // Section: Configuration
@@ -100,15 +94,6 @@ Currently this must be set to 1, due to limitations in the USB Host layer.
 // *****************************************************************************
 
 GENERIC_DEVICE  gc_DevData;
-
-#ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-    #ifndef USB_GENERIC_MAX_SERIAL_NUMBER
-        #define USB_GENERIC_MAX_SERIAL_NUMBER   64
-    #endif
-
-    WORD    serialNumbers[USB_MAX_GENERIC_DEVICES][USB_GENERIC_MAX_SERIAL_NUMBER];
-#endif
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -155,88 +140,26 @@ BOOL USBHostGenericInit ( BYTE address, DWORD flags, BYTE clientDriverID )
     BYTE *pDesc;
 
     // Initialize state
-    gc_DevData.rxLength     = 0;
+    gc_DevData.rxLength  = 0;
     gc_DevData.flags.val = 0;
 
     // Save device the address, VID, & PID
     gc_DevData.ID.deviceAddress = address;
     pDesc  = USBHostGetDeviceDescriptor(address);
-    pDesc += 8;
-    gc_DevData.ID.vid  =  (WORD)*pDesc;       pDesc++;
-    gc_DevData.ID.vid |= ((WORD)*pDesc) << 8; pDesc++;
-    gc_DevData.ID.pid  =  (WORD)*pDesc;       pDesc++;
-    gc_DevData.ID.pid |= ((WORD)*pDesc) << 8; pDesc++;
+    gc_DevData.ID.vid  = ((USB_DEVICE_DESCRIPTOR*)pDesc)->idVendor;
+    gc_DevData.ID.pid  = ((USB_DEVICE_DESCRIPTOR*)pDesc)->idProduct;
 
     // Save the Client Driver ID
     gc_DevData.clientDriverID = clientDriverID;
     
-    #ifdef DEBUG_MODE
-        UART2PrintString( "GEN: USB Generic Client Initalized: flags=0x" );
-        UART2PutHex(      flags );
-        UART2PrintString( " address=" );
-        UART2PutDec( address );
-        UART2PrintString( " VID=0x" );
-        UART2PutHex(      gc_DevData.ID.vid >> 8   );
-        UART2PutHex(      gc_DevData.ID.vid & 0xFF );
-        UART2PrintString( " PID=0x"      );
-        UART2PutHex(      gc_DevData.ID.pid >> 8   );
-        UART2PutHex(      gc_DevData.ID.pid & 0xFF );
-        UART2PrintString( "\r\n"         );
-    #endif
+    printf( "GEN: USB Generic Client Initalized: flags=0x%02X address=%d VID=0x%04X PID=0x%04X\r\n",
+            (unsigned int)flags, gc_DevData.ID.deviceAddress, gc_DevData.ID.vid, gc_DevData.ID.pid );
 
-    #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-    {
-        BYTE    *deviceDescriptor;
-        BYTE    serialNumberIndex;
-
-        // MCHP - when multiple devices are implemented, this init will change
-        // to find a free slot
-        gc_DevData.flags.serialNumberValid = 0;
-
-        gc_DevData.ID.serialNumber = &(serialNumbers[0][0]);
-        gc_DevData.ID.serialNumberLength = 0;
-
-        deviceDescriptor = USBHostGetDeviceDescriptor( deviceAddress );
-        serialNumberIndex = deviceDescriptor[16];
-
-        if (serialNumberIndex)
-        {
-            #ifdef DEBUG_MODE
-                UART2PrintString( "GEN: Getting serial number...\r\n" );
-            #endif
-        }
-        else
-        {
-            serialNumberIndex = 1;
-            #ifdef DEBUG_MODE
-                UART2PrintString( "GEN: Getting string descriptor...\r\n" );
-            #endif
-        }
-
-        if (USBHostGetStringDescriptor( address, serialNumberIndex, (BYTE *)gc_DevData.ID.serialNumber, USB_GENERIC_MAX_SERIAL_NUMBER*2 ))
-        {
-            // We can't get the serial number.  Just set the pointer to null
-            // and call it good.  We have to call the SN valid so we don't get trapped
-            // in the event handler.
-            gc_DevData.ID.serialNumber          = NULL;
-            gc_DevData.flags.initialized        = 1;
-            gc_DevData.flags.serialNumberValid  = 1;
-
-            // Tell the application layer that we have a device.
-            USB_HOST_APP_EVENT_HANDLER(address, EVENT_GENERIC_ATTACH, &(gc_DevData.ID), sizeof(GENERIC_DEVICE_ID) );
-
-            #ifdef DEBUG_MODE
-                UART2PrintString( "GEN: Cannot get string descriptor!\r\n" );
-            #endif
-        }
-    }
-    #else
-        // Generic Client Driver Init Complete.
-        gc_DevData.flags.initialized = 1;
-
-        // Notify that application that we've been attached to a device.
-        USB_HOST_APP_EVENT_HANDLER(address, EVENT_GENERIC_ATTACH, &(gc_DevData.ID), sizeof(GENERIC_DEVICE_ID) );
-    #endif
+    // Generic Client Driver Init Complete.
+    gc_DevData.flags.initialized = 1;
+    
+    // Notify that application that we've been attached to a device.
+    USB_HOST_APP_EVENT_HANDLER(address, EVENT_GENERIC_ATTACH, &(gc_DevData.ID), sizeof(GENERIC_DEVICE_ID) );
 
     // TBD
 
@@ -293,11 +216,7 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
         USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_DETACH, &gc_DevData.ID.deviceAddress, sizeof(BYTE) );
         gc_DevData.flags.val        = 0;
         gc_DevData.ID.deviceAddress = 0;
-        #ifdef DEBUG_MODE
-            UART2PrintString( "USB Generic Client Device Detached: address=" );
-            UART2PutDec( address );
-            UART2PrintString( "\r\n" );
-        #endif
+        printf( "USB Generic Client Device Detached: address=%d\r\n", address );
         return TRUE;
 
     #ifdef USB_ENABLE_TRANSFER_EVENT
@@ -306,21 +225,20 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
         {
             DWORD dataCount = ((HOST_TRANSFER_DATA *)data)->dataCount;
 
-            if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP) )//YTS
+            if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP) )
             {
                 gc_DevData.flags.rx1Busy = 0;
                 gc_DevData.rxLength = dataCount;
                 USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_RX1_DONE, &dataCount, sizeof(DWORD) );
             }
-			else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP2) )//YTS
+            else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_IN_EP|USB_GENERIC_EP2) )
             {
                 gc_DevData.flags.rx2Busy = 0;
                 gc_DevData.rxLength = dataCount;
                 USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_RX2_DONE, &dataCount, sizeof(DWORD) );
             }
-
             else if ( ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP) ||
-((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP2))//YTS
+                      ((HOST_TRANSFER_DATA *)data)->bEndpointAddress == (USB_OUT_EP|USB_GENERIC_EP2) )
             {
                 gc_DevData.flags.txBusy = 0;
                 USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_TX_DONE, &dataCount, sizeof(DWORD) );
@@ -329,9 +247,7 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
             #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
                 if (((((HOST_TRANSFER_DATA *)data)->bEndpointAddress & 0x7F) == 0) && !gc_DevData.flags.serialNumberValid)
                 {
-                    #ifdef DEBUG_MODE
-                        UART2PrintString( "GEN: Got serial number!\r\n" );
-                    #endif
+                    printf( "GEN: Got serial number!\r\n" );
                     // Set the serial number information
                     gc_DevData.ID.serialNumberLength    = dataCount;
                     gc_DevData.flags.serialNumberValid  = 1;
@@ -676,9 +592,7 @@ void USBHostGenericTasks( void )
             {
                 if (USBHostTransferIsComplete( gc_DevData.ID.deviceAddress, USB_IN_EP, &errorCode, &byteCount );
                 {
-                    #ifdef DEBUG_MODE
-                        UART2PrintString( "GEN: Got serial number!\r\n" );
-                    #endif
+                    printf( "GEN: Got serial number!\r\n" );
                     // Set the serial number information
                     gc_DevData.ID.serialNumberLength    = byteCount;
                     gc_DevData.flags.serialNumberValid  = 1;
@@ -849,8 +763,6 @@ BYTE USBHostGenericWrite( BYTE deviceAddress, void *buffer, DWORD length )
     return RetVal;
 
 } // USBHostGenericWrite
-
-//YTS added three functions below
 
 BYTE USBHostGenericClassRequest( BYTE deviceAddress, BYTE *data, WORD wLength )
 {

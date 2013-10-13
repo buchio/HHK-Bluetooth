@@ -113,7 +113,7 @@ typedef enum
     BT_STATE_ATTACHED,                ///< Attached.
 
     BT_STATE_WRITE_CLASS,
-    BT_STATE_READ_EP1,
+    BT_STATE_READ_CLASS,
     BT_STATE_READ_CLASS_WAITING,
     BT_STATE_WRITE_ACL,
     BT_STATE_READ_ACL_HCI,
@@ -132,33 +132,42 @@ typedef enum
 {
 	HCI_CMD_RESET = 0,                ///< Initialize the hci when a device is attached
     HCI_CMD_RESET_END,
+    HCI_CMD_READ_BD_ADDR,
     HCI_STATE_END
 } HCI_STATE;
 
 
-static BYTE        deviceAddress;  ///< Address of the device on the USB
+static BYTE        sDeviceAddress;  ///< Address of the device on the USB
 static BT_STATE    btState;        ///< Current state of Bluetooth dongle controler.
 static HCI_STATE   hciState;       ///< Current state of the demo application
 
 #define DATA_PACKET_LENGTH  64
 
-static WORD data_size;
-static int end_num;
-static unsigned char buf1[DATA_PACKET_LENGTH];
+typedef struct {
+    const int size;
+    const char *buf;
+} writeClassParam_t;
+static const writeClassParam_t* writeClassParam;
 
+typedef struct {
+    int end_num;
+    char *message;
+    unsigned char buf[DATA_PACKET_LENGTH];
+} readClassParam_t;
+static readClassParam_t readClassParam;
 
 static BOOL CheckForNewAttach ( void )
 {
     // Try to get the device address, if we don't have one.
-    if (deviceAddress == 0) {
+    if (sDeviceAddress == 0) {
         GENERIC_DEVICE_ID DevID;
 
         DevID.vid   = 0x04D8;
         DevID.pid   = 0x000C;
 
         if (USBHostGenericGetDeviceAddress(&DevID)) {
-            deviceAddress = DevID.deviceAddress;
-            printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", deviceAddress );
+            sDeviceAddress = DevID.deviceAddress;
+            printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", sDeviceAddress );
             return TRUE;
         }
     }
@@ -177,13 +186,21 @@ static void ManageHciState( void )
     
     switch (hciState) {
         case HCI_CMD_RESET:
-            buf1[0]=0x03;buf1[1]=0x0c;buf1[2]=0;
-            data_size=3;
+        {
+            static const writeClassParam_t writeCmdResetParam = { 3, "\x03\x0c" };
+            writeClassParam = &writeCmdResetParam;
             btState  = BT_STATE_WRITE_CLASS;
             hciState = HCI_CMD_RESET_END;
-            break;
+        } break;
         case HCI_CMD_RESET_END:
+            readClassParam.end_num =  0x0e;
+            readClassParam.message = "HCI_CMD_RESET: ";
+			btState  = BT_STATE_READ_CLASS;
+			hciState = HCI_CMD_READ_BD_ADDR;
             break;
+        case HCI_CMD_READ_BD_ADDR:
+            break;
+            
         default:
             break;
     }
@@ -194,16 +211,16 @@ static void ManageBluetoothState ( void )
     BYTE RetVal;
     static BT_STATE recentBtState = BT_STATE_END;
     if( recentBtState != btState ) {
-        printf( "btState Changed %d -> %d\r\n", recentBtState, btState );
+        // printf( "btState Changed %d -> %d\r\n", recentBtState, btState );
         recentBtState = btState;
     }
 
     // Watch for device detaching
-    if (USBHostGenericDeviceDetached(deviceAddress) && deviceAddress != 0) {
+    if (USBHostGenericDeviceDetached(sDeviceAddress) && sDeviceAddress != 0) {
         printf( "Generic demo device detached - polled\r\n" );
         btState  = BT_INITIALIZE;
 		hciState = HCI_CMD_RESET;
-        deviceAddress   = 0;
+        sDeviceAddress   = 0;
     }
 
     switch (btState) {
@@ -223,20 +240,44 @@ static void ManageBluetoothState ( void )
             break;
 
         case BT_STATE_WRITE_CLASS:
-            if (!USBHostGenericTxIsBusy(deviceAddress)) {
-                if ( (RetVal=USBHostGenericClassRequest( deviceAddress, buf1, data_size )) == USB_SUCCESS ) {
+            if (!USBHostGenericTxIsBusy(sDeviceAddress)) {
+                if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
+                                                           (BYTE *)writeClassParam->buf,
+                                                           writeClassParam->size )) == USB_SUCCESS ) {
                     printf( "HCI COMMAND SENT\r\n" );	
                     btState = BT_STATE_ATTACHED;
                 } else {
-                    printf( "Write Class Error !\r\n" );	
+                    printf( "Write Class Error (%02X) !\r\n", RetVal );	
+                    btState = BT_STATE_ERROR;
                 }
             }
             break;
             
-        case BT_STATE_READ_EP1:
+        case BT_STATE_READ_CLASS:
+            if (!USBHostGenericRx1IsBusy(sDeviceAddress)) {
+                if ( (RetVal=USBHostGenericRead(sDeviceAddress, readClassParam.buf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
+                    btState = BT_STATE_READ_CLASS_WAITING;
+                } else {
+                    printf( "Device Read Error !\r\n" );
+                    btState = BT_STATE_ERROR;
+                }
+            }
             break;
             
         case BT_STATE_READ_CLASS_WAITING:
+            if (!USBHostGenericRx1IsBusy(sDeviceAddress)) {
+                if( readClassParam.buf[0] != readClassParam.end_num) {
+                    btState = BT_STATE_READ_CLASS;
+                } else {
+                    int i;
+                    printf( readClassParam.message );
+                    for( i = 0; i < readClassParam.buf[1]+2; i++ ) {
+                        printf( " %02X", readClassParam.buf[i] );
+                    }
+                    printf( "\r\n" );
+                    btState = BT_STATE_ATTACHED;
+                }
+            }
             break;
             
         case BT_STATE_WRITE_ACL:
@@ -296,26 +337,24 @@ static void ManageBluetoothState ( void )
  */
 BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DWORD size )
 {
-    #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
-        BYTE i;
-    #endif
-
+    //printf( "USB_ApplicationEventHandler : %d\r\n", (int)event );
+    
     // Handle specific events.
     switch ( (INT)event )
     {
         case EVENT_GENERIC_ATTACH:
             if (size == sizeof(GENERIC_DEVICE_ID))
             {
-                deviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
+                sDeviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
                 btState  = BT_STATE_ATTACHED;
                 hciState = HCI_CMD_RESET;
-                printf( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", deviceAddress );
+                printf( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", sDeviceAddress );
                 return TRUE;
             }
             break;
 
         case EVENT_GENERIC_DETACH:
-            deviceAddress   = 0;
+            sDeviceAddress   = 0;
             btState = BT_INITIALIZE;
             printf( "Bluetooth dongle detached - event\r\n" );
             return TRUE;
