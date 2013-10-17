@@ -77,6 +77,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #define USE_AND_OR
 #include <xc.h>
@@ -133,6 +134,96 @@ typedef enum
 	HCI_CMD_RESET = 0,                ///< Initialize the hci when a device is attached
     HCI_CMD_RESET_END,
     HCI_CMD_READ_BD_ADDR,
+    HCI_CMD_READ_BD_ADDR_END,
+    HCI_CMD_LOCAL_NAME,
+    HCI_CMD_LOCAL_NAME_END,
+    HCI_CMD_CLASS_DEVICE_WRITE,
+    HCI_CMD_CLASS_DEVICE_WRITE_END,
+	HCI_CMD_SCAN_ENABLE_WRITE,
+    HCI_CMD_SCAN_ENABLE_WRITE_END,
+	HCI_CMD_WAIT_CONNECTION,
+	HCI_CMD_CONNECTION_ACCEPT,
+    HCI_CMD_CONNECTION_ACCEPT_WRITE_END,
+
+	HCI_CMD_CREATE_CONNECTION,
+    HCI_CMD_CONNECTION_COMP,
+
+	HCI_CMD_SIMPLE_PAIR,
+	HCI_CMD_SIMPLE_PAIR_END,
+	HCI_CMD_EVENT_MASK,
+	HCI_CMD_EVENT_MASK_END,
+	HCI_IOC_REPLY,
+	HCI_IOC_REPLY_END,
+	HCI_CONF_REPLY,
+	HCI_CONF_REPLY_END,
+	HCI_SAVE_LINK_KEY,
+
+	HCI_AUTH_REQ,
+	HCI_AUTH_REQ_END,
+	HCI_LINK_KEY_REP,
+	HCI_LINK_KEY_REP_END,
+	HCI_SET_ENCRYPT,
+	HCI_SET_ENCRYPT_END,
+
+	L2CAP_CON_REQ,
+	L2CAP_CON_RESP,
+	L2CAP_CONFIG_REQ,
+	L2CAP_CONFIG_RESP,
+	L2CAP_CONFIG_REQ_HOST,
+    L2CAP_CONFIG_RESP_HOST,
+    L2CAP_CONFIG_REQ_HOST_READ_END,
+	L2CAP_DISCONNECT_REQ,
+	L2CAP_DISCONNECT_REQ_END,
+
+	L2CAP_CON_REQ_TO,
+	L2CAP_CON_RESP_FROM,
+	L2CAP_CON_RESP1_FROM,
+	L2CAP_CONFIG_REQ_FROM,
+	L2CAP_CONFIG_RESP_TO,
+	L2CAP_CONFIG_REQ_HOST_TO,
+    L2CAP_CONFIG_RESP_HOST_FROM,
+
+	SDP_SEARCH_REQ,
+	SDP_SERCH_RESP,
+	SDP_SERCH_RESP_MICRO,
+	SDP_ATTR_REQ,
+    SDP_ATTR_REQ_READ_END,
+	SDP_ATTR_RESP2a,
+	SDP_ATTR_RESP2a_READ,
+    SDP_ATTR_RESP2a_READ_END,
+	SDP_ATTR_RESP2b,
+	SDP_ATTR_RESP2b_READ,
+    SDP_ATTR_RESP2b_READ_END,
+	SDP_ATTR_RESP2c,
+    SDP_ATTR_RESP2c_READ,
+    SDP_ATTR_RESP2d_READ_END,
+	SDP_ATTR_RESP3,
+    SDP_ATTR_RESP3_READ,
+	SDP_ATTR_RESP3_READ_END,
+	SDP_ATTR_RESP4a,
+	SDP_ATTR_RESP4a_READ,
+    SDP_ATTR_RESP4a_READ_END,
+	SDP_ATTR_RESP4b,
+	SDP_ATTR_RESP4b_READ,
+    SDP_ATTR_RESP4b_READ_END,
+	SDP_ATTR_RESP4c,
+    SDP_ATTR_RESP4c_READ,
+    SDP_ATTR_RESP4c_READ_END,
+	SDP_ATTR_RESP5,
+    SDP_ATTR_RESP5_READ,
+    SDP_ATTR_RESP5_READ_END,
+	SDP_ATTR_END,
+
+	HID_START,
+    HID_START_RESP,
+    HID_HANDSHAKE_ERR,
+	HID_READ_LED,
+	HCI_CMD_SCAN_DISABLE,
+	HCI_CMD_SCAN_DISABLE_WRITE_END,
+	HID_WRITE_DATA,
+	HID_WRITE_DATA1,
+	HID_WRITE_DATA2,
+	HID_WRITE_DATA3,
     HCI_STATE_END
 } HCI_STATE;
 
@@ -144,10 +235,10 @@ static HCI_STATE   hciState;       ///< Current state of the demo application
 #define DATA_PACKET_LENGTH  64
 
 typedef struct {
-    const int size;
-    const char *buf;
+    int size;
+    char buf[DATA_PACKET_LENGTH];
 } writeClassParam_t;
-static const writeClassParam_t* writeClassParam;
+static writeClassParam_t writeClassParam;
 
 typedef struct {
     int end_num;
@@ -176,6 +267,31 @@ static BOOL CheckForNewAttach ( void )
 
 }
 
+static void WriteClass( HCI_STATE nextState, size_t length, ... )
+{
+    va_list args;
+    va_start( args, length );
+    writeClassParam.size = length;
+
+    size_t i = 0;
+    for( i = 0; i < length; i++ )
+    {
+        writeClassParam.buf[i] = va_arg( args, BYTE );
+    }
+    btState  = BT_STATE_WRITE_CLASS;
+    hciState = nextState;
+}
+
+static void ReadClass( HCI_STATE nextState, int endnum, char *message )
+{
+    readClassParam.end_num = endnum;
+    readClassParam.message = message;
+    btState  = BT_STATE_READ_CLASS;
+    hciState = nextState;
+}
+
+
+
 static void ManageHciState( void )
 {
     static HCI_STATE recentHciState = HCI_STATE_END;
@@ -186,21 +302,119 @@ static void ManageHciState( void )
     
     switch (hciState) {
         case HCI_CMD_RESET:
-        {
-            static const writeClassParam_t writeCmdResetParam = { 3, "\x03\x0c" };
-            writeClassParam = &writeCmdResetParam;
-            btState  = BT_STATE_WRITE_CLASS;
-            hciState = HCI_CMD_RESET_END;
-        } break;
+            WriteClass( HCI_CMD_RESET_END, 3, 0x03, 0x0C, 0x00 );
+            break;
         case HCI_CMD_RESET_END:
-            readClassParam.end_num =  0x0e;
-            readClassParam.message = "HCI_CMD_RESET: ";
-			btState  = BT_STATE_READ_CLASS;
-			hciState = HCI_CMD_READ_BD_ADDR;
+            ReadClass( HCI_CMD_READ_BD_ADDR, 0x0e, "HCI_CMD_RESET: " );
             break;
         case HCI_CMD_READ_BD_ADDR:
+            WriteClass( HCI_CMD_READ_BD_ADDR_END, 3, 0x09, 0x10, 0x00 );
             break;
-            
+        case HCI_CMD_READ_BD_ADDR_END:
+            ReadClass( HCI_CMD_LOCAL_NAME, 0x0e, "HCI_CMD_BD_ADDR: " );
+            break;
+        case HCI_CMD_LOCAL_NAME:
+            WriteClass( HCI_CMD_LOCAL_NAME_END, 7, 0x13, 0x0c, 0x04, 'k', 'e', 'y', 0x00 );
+            break;
+        case HCI_CMD_LOCAL_NAME_END:
+            ReadClass( HCI_CMD_CLASS_DEVICE_WRITE, 0x0e, "HCI_CMD_LOCAL_NAME: " );
+            break;
+        case HCI_CMD_CLASS_DEVICE_WRITE:
+            WriteClass( HCI_CMD_CLASS_DEVICE_WRITE_END, 6, 0x24, 0x0c, 0x03, 0x40, 0x05, 0x00 );
+            break;
+        case HCI_CMD_CLASS_DEVICE_WRITE_END:
+            ReadClass( HCI_CMD_SIMPLE_PAIR, 0x0e, "HCI_CMD_CLASS_DEVICE_WRITE: " );
+            break;
+        case HCI_CMD_SIMPLE_PAIR:
+            WriteClass( HCI_CMD_SIMPLE_PAIR_END, 4, 0x56, 0x0c, 0x01, 0x01 );
+            break;
+        case HCI_CMD_SIMPLE_PAIR_END:
+            ReadClass( HCI_CMD_EVENT_MASK, 0x0e, "HCI_CMD_SIMPLE_PAIR: " );
+            break;
+
+        case HCI_CMD_SCAN_ENABLE_WRITE:
+        case HCI_CMD_SCAN_ENABLE_WRITE_END:
+        case HCI_CMD_WAIT_CONNECTION:
+        case HCI_CMD_CONNECTION_ACCEPT:
+        case HCI_CMD_CONNECTION_ACCEPT_WRITE_END:
+
+        case HCI_CMD_CREATE_CONNECTION:
+        case HCI_CMD_CONNECTION_COMP:
+
+        case HCI_CMD_EVENT_MASK:
+        case HCI_CMD_EVENT_MASK_END:
+        case HCI_IOC_REPLY:
+        case HCI_IOC_REPLY_END:
+        case HCI_CONF_REPLY:
+        case HCI_CONF_REPLY_END:
+        case HCI_SAVE_LINK_KEY:
+
+        case HCI_AUTH_REQ:
+        case HCI_AUTH_REQ_END:
+        case HCI_LINK_KEY_REP:
+        case HCI_LINK_KEY_REP_END:
+        case HCI_SET_ENCRYPT:
+        case HCI_SET_ENCRYPT_END:
+
+        case L2CAP_CON_REQ:
+        case L2CAP_CON_RESP:
+        case L2CAP_CONFIG_REQ:
+        case L2CAP_CONFIG_RESP:
+        case L2CAP_CONFIG_REQ_HOST:
+        case L2CAP_CONFIG_RESP_HOST:
+        case L2CAP_CONFIG_REQ_HOST_READ_END:
+        case L2CAP_DISCONNECT_REQ:
+        case L2CAP_DISCONNECT_REQ_END:
+
+        case L2CAP_CON_REQ_TO:
+        case L2CAP_CON_RESP_FROM:
+        case L2CAP_CON_RESP1_FROM:
+        case L2CAP_CONFIG_REQ_FROM:
+        case L2CAP_CONFIG_RESP_TO:
+        case L2CAP_CONFIG_REQ_HOST_TO:
+        case L2CAP_CONFIG_RESP_HOST_FROM:
+
+        case SDP_SEARCH_REQ:
+        case SDP_SERCH_RESP:
+        case SDP_SERCH_RESP_MICRO:
+        case SDP_ATTR_REQ:
+        case SDP_ATTR_REQ_READ_END:
+        case SDP_ATTR_RESP2a:
+        case SDP_ATTR_RESP2a_READ:
+        case SDP_ATTR_RESP2a_READ_END:
+        case SDP_ATTR_RESP2b:
+        case SDP_ATTR_RESP2b_READ:
+        case SDP_ATTR_RESP2b_READ_END:
+        case SDP_ATTR_RESP2c:
+        case SDP_ATTR_RESP2c_READ:
+        case SDP_ATTR_RESP2d_READ_END:
+        case SDP_ATTR_RESP3:
+        case SDP_ATTR_RESP3_READ:
+        case SDP_ATTR_RESP3_READ_END:
+        case SDP_ATTR_RESP4a:
+        case SDP_ATTR_RESP4a_READ:
+        case SDP_ATTR_RESP4a_READ_END:
+        case SDP_ATTR_RESP4b:
+        case SDP_ATTR_RESP4b_READ:
+        case SDP_ATTR_RESP4b_READ_END:
+        case SDP_ATTR_RESP4c:
+        case SDP_ATTR_RESP4c_READ:
+        case SDP_ATTR_RESP4c_READ_END:
+        case SDP_ATTR_RESP5:
+        case SDP_ATTR_RESP5_READ:
+        case SDP_ATTR_RESP5_READ_END:
+        case SDP_ATTR_END:
+
+        case HID_START:
+        case HID_START_RESP:
+        case HID_HANDSHAKE_ERR:
+        case HID_READ_LED:
+        case HCI_CMD_SCAN_DISABLE:
+        case HCI_CMD_SCAN_DISABLE_WRITE_END:
+        case HID_WRITE_DATA:
+        case HID_WRITE_DATA1:
+        case HID_WRITE_DATA2:
+        case HID_WRITE_DATA3:
         default:
             break;
     }
@@ -242,8 +456,8 @@ static void ManageBluetoothState ( void )
         case BT_STATE_WRITE_CLASS:
             if (!USBHostGenericTxIsBusy(sDeviceAddress)) {
                 if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
-                                                           (BYTE *)writeClassParam->buf,
-                                                           writeClassParam->size )) == USB_SUCCESS ) {
+                                                           (BYTE *)writeClassParam.buf,
+                                                           writeClassParam.size )) == USB_SUCCESS ) {
                     printf( "HCI COMMAND SENT\r\n" );	
                     btState = BT_STATE_ATTACHED;
                 } else {
@@ -360,7 +574,9 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
             return TRUE;
 
         case EVENT_GENERIC_TX_DONE:           // The main state machine will poll the driver.
+            return TRUE;
         case EVENT_GENERIC_RX1_DONE:
+            return TRUE;
         case EVENT_GENERIC_RX2_DONE:
             return TRUE;
 
