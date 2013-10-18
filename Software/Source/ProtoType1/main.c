@@ -137,10 +137,10 @@ typedef enum
     HCI_CMD_READ_BD_ADDR_END,
     HCI_CMD_LOCAL_NAME,
     HCI_CMD_LOCAL_NAME_END,
-    HCI_CMD_CLASS_DEVICE_WRITE,
-    HCI_CMD_CLASS_DEVICE_WRITE_END,
-	HCI_CMD_SCAN_ENABLE_WRITE,
-    HCI_CMD_SCAN_ENABLE_WRITE_END,
+    HCI_CMD_CLASS_DEVICE,
+    HCI_CMD_CLASS_DEVICE_END,
+	HCI_CMD_SCAN_ENABLE,
+    HCI_CMD_SCAN_ENABLE_END,
 	HCI_CMD_WAIT_CONNECTION,
 	HCI_CMD_CONNECTION_ACCEPT,
     HCI_CMD_CONNECTION_ACCEPT_WRITE_END,
@@ -219,7 +219,7 @@ typedef enum
     HID_HANDSHAKE_ERR,
 	HID_READ_LED,
 	HCI_CMD_SCAN_DISABLE,
-	HCI_CMD_SCAN_DISABLE_WRITE_END,
+	HCI_CMD_SCAN_DISABLE_END,
 	HID_WRITE_DATA,
 	HID_WRITE_DATA1,
 	HID_WRITE_DATA2,
@@ -242,10 +242,11 @@ static writeClassParam_t writeClassParam;
 
 typedef struct {
     int end_num;
-    char *message;
     unsigned char buf[DATA_PACKET_LENGTH];
 } readClassParam_t;
 static readClassParam_t readClassParam;
+
+unsigned char ConnectSwitch;
 
 static BOOL CheckForNewAttach ( void )
 {
@@ -282,15 +283,20 @@ static void WriteClass( HCI_STATE nextState, size_t length, ... )
     hciState = nextState;
 }
 
-static void ReadClass( HCI_STATE nextState, int endnum, char *message )
+static void ReadClass( HCI_STATE nextState, int endnum )
 {
     readClassParam.end_num = endnum;
-    readClassParam.message = message;
     btState  = BT_STATE_READ_CLASS;
     hciState = nextState;
 }
 
-
+#define HCI_EXEC_COMMAND( xCurrentState, xNextState, ... ) \
+	case xCurrentState:                                    \
+        WriteClass( xCurrentState ## _END, __VA_ARGS__ );  \
+        break;                                             \
+    case xCurrentState ## _END:                            \
+        ReadClass( xNextState, 0x0e );                     \
+        break
 
 static void ManageHciState( void )
 {
@@ -301,39 +307,14 @@ static void ManageHciState( void )
     }
     
     switch (hciState) {
-        case HCI_CMD_RESET:
-            WriteClass( HCI_CMD_RESET_END, 3, 0x03, 0x0C, 0x00 );
-            break;
-        case HCI_CMD_RESET_END:
-            ReadClass( HCI_CMD_READ_BD_ADDR, 0x0e, "HCI_CMD_RESET: " );
-            break;
-        case HCI_CMD_READ_BD_ADDR:
-            WriteClass( HCI_CMD_READ_BD_ADDR_END, 3, 0x09, 0x10, 0x00 );
-            break;
-        case HCI_CMD_READ_BD_ADDR_END:
-            ReadClass( HCI_CMD_LOCAL_NAME, 0x0e, "HCI_CMD_BD_ADDR: " );
-            break;
-        case HCI_CMD_LOCAL_NAME:
-            WriteClass( HCI_CMD_LOCAL_NAME_END, 7, 0x13, 0x0c, 0x04, 'k', 'e', 'y', 0x00 );
-            break;
-        case HCI_CMD_LOCAL_NAME_END:
-            ReadClass( HCI_CMD_CLASS_DEVICE_WRITE, 0x0e, "HCI_CMD_LOCAL_NAME: " );
-            break;
-        case HCI_CMD_CLASS_DEVICE_WRITE:
-            WriteClass( HCI_CMD_CLASS_DEVICE_WRITE_END, 6, 0x24, 0x0c, 0x03, 0x40, 0x05, 0x00 );
-            break;
-        case HCI_CMD_CLASS_DEVICE_WRITE_END:
-            ReadClass( HCI_CMD_SIMPLE_PAIR, 0x0e, "HCI_CMD_CLASS_DEVICE_WRITE: " );
-            break;
-        case HCI_CMD_SIMPLE_PAIR:
-            WriteClass( HCI_CMD_SIMPLE_PAIR_END, 4, 0x56, 0x0c, 0x01, 0x01 );
-            break;
-        case HCI_CMD_SIMPLE_PAIR_END:
-            ReadClass( HCI_CMD_EVENT_MASK, 0x0e, "HCI_CMD_SIMPLE_PAIR: " );
-            break;
-
-        case HCI_CMD_SCAN_ENABLE_WRITE:
-        case HCI_CMD_SCAN_ENABLE_WRITE_END:
+        HCI_EXEC_COMMAND( HCI_CMD_RESET,        HCI_CMD_READ_BD_ADDR, 3, 0x03, 0x0C, 0x00 );
+        HCI_EXEC_COMMAND( HCI_CMD_READ_BD_ADDR, HCI_CMD_LOCAL_NAME,   3, 0x09, 0x10, 0x00 );
+        HCI_EXEC_COMMAND( HCI_CMD_LOCAL_NAME,   HCI_CMD_CLASS_DEVICE, 7, 0x13, 0x0c, 0x04, 'k', 'e', 'y', 0x00 );
+        HCI_EXEC_COMMAND( HCI_CMD_CLASS_DEVICE, HCI_CMD_SIMPLE_PAIR,  6, 0x24, 0x0c, 0x03, 0x40, 0x05, 0x00 );
+        HCI_EXEC_COMMAND( HCI_CMD_SIMPLE_PAIR,  HCI_CMD_EVENT_MASK,   4, 0x56, 0x0c, 0x01, 0x01 );
+        HCI_EXEC_COMMAND( HCI_CMD_EVENT_MASK,   HCI_CMD_SCAN_ENABLE,  11, 0x01, 0x0c, 0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0xff, 0x00 );
+        HCI_EXEC_COMMAND( HCI_CMD_SCAN_ENABLE,  HCI_CMD_CREATE_CONNECTION, 4, 0x1a, 0x0c, 0x01, 0x03 );
+            
         case HCI_CMD_WAIT_CONNECTION:
         case HCI_CMD_CONNECTION_ACCEPT:
         case HCI_CMD_CONNECTION_ACCEPT_WRITE_END:
@@ -341,8 +322,6 @@ static void ManageHciState( void )
         case HCI_CMD_CREATE_CONNECTION:
         case HCI_CMD_CONNECTION_COMP:
 
-        case HCI_CMD_EVENT_MASK:
-        case HCI_CMD_EVENT_MASK_END:
         case HCI_IOC_REPLY:
         case HCI_IOC_REPLY_END:
         case HCI_CONF_REPLY:
@@ -410,7 +389,7 @@ static void ManageHciState( void )
         case HID_HANDSHAKE_ERR:
         case HID_READ_LED:
         case HCI_CMD_SCAN_DISABLE:
-        case HCI_CMD_SCAN_DISABLE_WRITE_END:
+        case HCI_CMD_SCAN_DISABLE_END:
         case HID_WRITE_DATA:
         case HID_WRITE_DATA1:
         case HID_WRITE_DATA2:
@@ -458,7 +437,12 @@ static void ManageBluetoothState ( void )
                 if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
                                                            (BYTE *)writeClassParam.buf,
                                                            writeClassParam.size )) == USB_SUCCESS ) {
-                    printf( "HCI COMMAND SENT\r\n" );	
+                    printf( "HCI CMD " );	
+                    int i;
+                    for( i = 0; i < writeClassParam.size; i++ ) {
+                        printf( " %02X", *( (BYTE *)writeClassParam.buf + i ) );
+                    }
+                    printf( "\r\n" );
                     btState = BT_STATE_ATTACHED;
                 } else {
                     printf( "Write Class Error (%02X) !\r\n", RetVal );	
@@ -483,8 +467,8 @@ static void ManageBluetoothState ( void )
                 if( readClassParam.buf[0] != readClassParam.end_num) {
                     btState = BT_STATE_READ_CLASS;
                 } else {
+                    printf( "HCI EVT " );	
                     int i;
-                    printf( readClassParam.message );
                     for( i = 0; i < readClassParam.buf[1]+2; i++ ) {
                         printf( " %02X", readClassParam.buf[i] );
                     }
@@ -589,32 +573,32 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
             return TRUE;
 
         case EVENT_HUB_ATTACH:
-            printf( "\r\n***** USB Error - hubs are not supported *****\r\n" );
+            // printf( "\r\n***** USB Error - hubs are not supported *****\r\n" );
             return TRUE;
             break;
 
         case EVENT_UNSUPPORTED_DEVICE:
-            printf( "\r\n***** USB Error - device is not supported *****\r\n" );
+            // printf( "\r\n***** USB Error - device is not supported *****\r\n" );
             return TRUE;
             break;
 
         case EVENT_CANNOT_ENUMERATE:
-            printf( "\r\n***** USB Error - cannot enumerate device *****\r\n" );
+            // printf( "\r\n***** USB Error - cannot enumerate device *****\r\n" );
             return TRUE;
             break;
 
         case EVENT_CLIENT_INIT_ERROR:
-            printf( "\r\n***** USB Error - client driver initialization error *****\r\n" );
+            // printf( "\r\n***** USB Error - client driver initialization error *****\r\n" );
             return TRUE;
             break;
 
         case EVENT_OUT_OF_MEMORY:
-            printf( "\r\n***** USB Error - out of heap memory *****\r\n" );
+            // printf( "\r\n***** USB Error - out of heap memory *****\r\n" );
             return TRUE;
             break;
 
         case EVENT_UNSPECIFIED_ERROR:   // This should never be generated.
-            printf( "\r\n***** USB Error - unspecified *****\r\n" );
+            // printf( "\r\n***** USB Error - unspecified *****\r\n" );
             return TRUE;
             break;
 
@@ -682,13 +666,10 @@ int main(void) {
     hciState = HCI_CMD_RESET;
     
     
-    printf( "\r\nProtoType1.\r\n");
-    Uart1Flush();
-
     if ( USBHostInit(0) == TRUE ) {
-        printf( "\r\n\r\n***** USB Custom Demo App Initialized *****\r\n\r\n" );
+        printf( "\r\n\r\nHHK Bluetooth Adapter Initialized.\r\n\r\n" );
     } else {
-        printf( "\r\n\r\nCould not initialize USB Custom Demo App - USB.  Halting.\r\n\r\n" );
+        printf( "\r\n\r\nCould not initialize HHK Bluetooth Adapter.  Halting.\r\n\r\n" );
         while (1);
     }
 
@@ -714,9 +695,10 @@ int main(void) {
     while( 1 ) {
         static int c = 0;
         static int num = 0;
-
+        
         while( 1 ) {
-
+            ConnectSwitch=PORTBbits.RB7;
+            
 #if 1
             c = Uart1GetCh();
             if(c != -1) {

@@ -72,6 +72,8 @@ BC/KO       25-Dec-2007 First release
 // *****************************************************************************
 // *****************************************************************************
 
+#undef DEBUG_USB_HOST_GENERIC
+
 // *****************************************************************************
 /* Max Number of Supported Devices
 
@@ -152,8 +154,10 @@ BOOL USBHostGenericInit ( BYTE address, DWORD flags, BYTE clientDriverID )
     // Save the Client Driver ID
     gc_DevData.clientDriverID = clientDriverID;
     
+#ifdef DEBUG_USB_HOST_GENERIC
     printf( "GEN: USB Generic Client Initalized: flags=0x%02X address=%d VID=0x%04X PID=0x%04X\r\n",
             (unsigned int)flags, gc_DevData.ID.deviceAddress, gc_DevData.ID.vid, gc_DevData.ID.pid );
+#endif
 
     // Generic Client Driver Init Complete.
     gc_DevData.flags.initialized = 1;
@@ -216,7 +220,9 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
         USB_HOST_APP_EVENT_HANDLER(gc_DevData.ID.deviceAddress, EVENT_GENERIC_DETACH, &gc_DevData.ID.deviceAddress, sizeof(BYTE) );
         gc_DevData.flags.val        = 0;
         gc_DevData.ID.deviceAddress = 0;
+#ifdef DEBUG_USB_HOST_GENERIC
         printf( "USB Generic Client Device Detached: address=%d\r\n", address );
+#endif
         return TRUE;
 
     #ifdef USB_ENABLE_TRANSFER_EVENT
@@ -247,7 +253,9 @@ BOOL USBHostGenericEventHandler ( BYTE address, USB_EVENT event, void *data, DWO
             #ifdef USB_GENERIC_SUPPORT_SERIAL_NUMBERS
                 if (((((HOST_TRANSFER_DATA *)data)->bEndpointAddress & 0x7F) == 0) && !gc_DevData.flags.serialNumberValid)
                 {
+#ifdef DEBUG_USB_HOST_GENERIC
                     printf( "GEN: Got serial number!\r\n" );
+#endif
                     // Set the serial number information
                     gc_DevData.ID.serialNumberLength    = dataCount;
                     gc_DevData.flags.serialNumberValid  = 1;
@@ -592,7 +600,9 @@ void USBHostGenericTasks( void )
             {
                 if (USBHostTransferIsComplete( gc_DevData.ID.deviceAddress, USB_IN_EP, &errorCode, &byteCount );
                 {
+#ifdef DEBUG_USB_HOST_GENERIC
                     printf( "GEN: Got serial number!\r\n" );
+#endif
                     // Set the serial number information
                     gc_DevData.ID.serialNumberLength    = byteCount;
                     gc_DevData.flags.serialNumberValid  = 1;

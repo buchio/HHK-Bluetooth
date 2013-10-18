@@ -59,6 +59,9 @@ int Uart1ReceiveQueueSize( void );
 
 /// @}
 
+/// \defgroup Bluetooth Bluetooth関連モジュール
+
+
 /// @}
 
 #endif	/* COMMON_H */
