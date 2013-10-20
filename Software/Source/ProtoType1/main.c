@@ -99,6 +99,7 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Microchip/Include/USB/usb.h"
 #include "../Microchip/Include/USB/usb_host_generic.h"
 #include "../Microchip/Include/timer.h"
+#include "../Microchip/Include/DEE_Emulation_16-bit.h"
 
 
 /// \defgroup USB USBホスト処理
@@ -665,6 +666,10 @@ int main(void) {
     btState = BT_INITIALIZE;
     hciState = HCI_CMD_RESET;
     
+    // EE
+    DataEEInit();
+    dataEEFlags.val = 0;
+
     
     if ( USBHostInit(0) == TRUE ) {
         printf( "\r\n\r\nHHK Bluetooth Adapter Initialized.\r\n\r\n" );
@@ -691,6 +696,11 @@ int main(void) {
 	CNPU2=0x80;	//pin#16 pull-up CN23
 	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
 #endif
+
+    printf( "DataEERead(1): %04X\r\n", DataEERead( 1 ) );
+    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
+    printf( "DataEERead(2): %04X\r\n", DataEERead( 2 ) );
+    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
     
     while( 1 ) {
         static int c = 0;
@@ -704,6 +714,24 @@ int main(void) {
             if(c != -1) {
                 if (c == 'A') LATB &= ~0b1000000000000000; //LED 点灯
                 if (c == 'B') LATB |= 0b1000000000000000; //LED 点灯
+                if (c == 'C') {
+                    DataEEWrite( 0x0123, 1 );
+                    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
+                }
+                if (c == 'D') {
+                    DataEEWrite( 0x4567, 1 );
+                    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
+                }
+                if (c == 'c') {
+                    DataEEWrite( 0x89AB, 2 );
+                    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
+                }
+                
+                if (c == 'd') {
+                    DataEEWrite( 0xCDEF, 2 );
+                    printf( "dataEEFlags: %04X\r\n", dataEEFlags.val );
+                }
+                
                 if ( c < ' ' ) {
                     printf("[0x%02X]", c);
                 } else {

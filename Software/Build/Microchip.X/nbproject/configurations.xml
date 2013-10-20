@@ -7,8 +7,10 @@
     </logicalFolder>
     <logicalFolder name="Microchip" displayName="Microchip" projectFiles="true">
       <logicalFolder name="Common" displayName="Common" projectFiles="true">
-        <itemPath>../../Source/Microchip/Common/debug_ram_buffer.c</itemPath>
+        <itemPath>../../Source/Microchip/Common/DEE_Emulation_16-bit.c</itemPath>
+        <itemPath>../../Source/Microchip/Common/Flash_Operations.s</itemPath>
         <itemPath>../../Source/Microchip/Common/TimeDelay.c</itemPath>
+        <itemPath>../../Source/Microchip/Common/debug_ram_buffer.c</itemPath>
         <itemPath>../../Source/Microchip/Common/timer.c</itemPath>
         <itemPath>../../Source/Microchip/Common/uart2.c</itemPath>
       </logicalFolder>
@@ -17,6 +19,7 @@
           <itemPath>../../Source/Microchip/Include/USB/usb.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_ch9.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_common.h</itemPath>
+          <itemPath>../../Source/Microchip/Include/USB/usb_config.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_device.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_function_generic.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_hal.h</itemPath>
@@ -26,13 +29,13 @@
           <itemPath>../../Source/Microchip/Include/USB/usb_host_hid.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_host_hid_parser.h</itemPath>
           <itemPath>../../Source/Microchip/Include/USB/usb_otg.h</itemPath>
-          <itemPath>../../Source/Microchip/Include/USB/usb_config.h</itemPath>
         </logicalFolder>
         <itemPath>../../Source/Microchip/Include/Compiler.h</itemPath>
-        <itemPath>../../Source/Microchip/Include/debug.h</itemPath>
+        <itemPath>../../Source/Microchip/Include/DEE_Emulation_16-bit.h</itemPath>
         <itemPath>../../Source/Microchip/Include/GenericTypeDefs.h</itemPath>
-        <itemPath>../../Source/Microchip/Include/struct_queue.h</itemPath>
         <itemPath>../../Source/Microchip/Include/TimeDelay.h</itemPath>
+        <itemPath>../../Source/Microchip/Include/debug.h</itemPath>
+        <itemPath>../../Source/Microchip/Include/struct_queue.h</itemPath>
         <itemPath>../../Source/Microchip/Include/timer.h</itemPath>
         <itemPath>../../Source/Microchip/Include/uart2.h</itemPath>
       </logicalFolder>
