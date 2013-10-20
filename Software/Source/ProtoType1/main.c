@@ -102,7 +102,14 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Microchip/Include/DEE_Emulation_16-bit.h"
 
 
+#define USB_DEBUG
+
+
 /// \defgroup USB USBホスト処理
+/// @{
+
+///
+/// \defgroup USBVariables USBホスト共有変数
 /// @{
 
 ///
@@ -110,21 +117,19 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 ///
 typedef enum
 {
-    BT_INITIALIZE = 0,                ///< Initialize the app when a device is attached
-    BT_STATE_IDLE,                    ///< Inactive State
-    BT_STATE_ATTACHED,                ///< Attached.
-
-    BT_STATE_WRITE_CLASS,
-    BT_STATE_READ_CLASS,
-    BT_STATE_READ_CLASS_WAITING,
-    BT_STATE_WRITE_ACL,
-    BT_STATE_READ_ACL_HCI,
-    BT_STATE_READ_ACL_WAITING,
-    BT_STATE_READ_HCI_WAITING,
-    BT_STATE_READ_HCI,
-
-    BT_STATE_ERROR,                   ///< An error has occured
-    BT_STATE_END
+    BT_INITIALIZE = 0,              ///< 0  Initialize the app when a device is attached
+    BT_STATE_IDLE,                  ///< 1  Inactive State
+    BT_STATE_ATTACHED,              ///< 2  Attached.
+    BT_STATE_WRITE_CLASS,           ///< 3
+    BT_STATE_READ_CLASS,            ///< 4
+    BT_STATE_READ_CLASS_WAITING,    ///< 5
+    BT_STATE_WRITE_ACL,             ///< 6
+    BT_STATE_READ_ACL_HCI,          ///< 7
+    BT_STATE_READ_ACL_WAITING,      ///< 8
+    BT_STATE_READ_HCI,              ///< 9
+    BT_STATE_READ_HCI_WAITING,      ///< 10
+    BT_STATE_ERROR,                 ///< 11 An error has occured
+    BT_STATE_END                    ///< 12
 } BT_STATE;
 
 ///
@@ -132,122 +137,140 @@ typedef enum
 ///
 typedef enum
 {
-	HCI_CMD_RESET = 0,                ///< Initialize the hci when a device is attached
-    HCI_CMD_RESET_END,
-    HCI_CMD_READ_BD_ADDR,
-    HCI_CMD_READ_BD_ADDR_END,
-    HCI_CMD_LOCAL_NAME,
-    HCI_CMD_LOCAL_NAME_END,
-    HCI_CMD_CLASS_DEVICE,
-    HCI_CMD_CLASS_DEVICE_END,
-	HCI_CMD_SCAN_ENABLE,
-    HCI_CMD_SCAN_ENABLE_END,
-	HCI_CMD_WAIT_CONNECTION,
-	HCI_CMD_CONNECTION_ACCEPT,
-    HCI_CMD_CONNECTION_ACCEPT_WRITE_END,
-
-	HCI_CMD_CREATE_CONNECTION,
-    HCI_CMD_CONNECTION_COMP,
-
-	HCI_CMD_SIMPLE_PAIR,
-	HCI_CMD_SIMPLE_PAIR_END,
-	HCI_CMD_EVENT_MASK,
-	HCI_CMD_EVENT_MASK_END,
-	HCI_IOC_REPLY,
-	HCI_IOC_REPLY_END,
-	HCI_CONF_REPLY,
-	HCI_CONF_REPLY_END,
-	HCI_SAVE_LINK_KEY,
-
-	HCI_AUTH_REQ,
-	HCI_AUTH_REQ_END,
-	HCI_LINK_KEY_REP,
-	HCI_LINK_KEY_REP_END,
-	HCI_SET_ENCRYPT,
-	HCI_SET_ENCRYPT_END,
-
-	L2CAP_CON_REQ,
-	L2CAP_CON_RESP,
-	L2CAP_CONFIG_REQ,
-	L2CAP_CONFIG_RESP,
-	L2CAP_CONFIG_REQ_HOST,
-    L2CAP_CONFIG_RESP_HOST,
-    L2CAP_CONFIG_REQ_HOST_READ_END,
-	L2CAP_DISCONNECT_REQ,
-	L2CAP_DISCONNECT_REQ_END,
-
-	L2CAP_CON_REQ_TO,
-	L2CAP_CON_RESP_FROM,
-	L2CAP_CON_RESP1_FROM,
-	L2CAP_CONFIG_REQ_FROM,
-	L2CAP_CONFIG_RESP_TO,
-	L2CAP_CONFIG_REQ_HOST_TO,
-    L2CAP_CONFIG_RESP_HOST_FROM,
-
-	SDP_SEARCH_REQ,
-	SDP_SERCH_RESP,
-	SDP_SERCH_RESP_MICRO,
-	SDP_ATTR_REQ,
-    SDP_ATTR_REQ_READ_END,
-	SDP_ATTR_RESP2a,
-	SDP_ATTR_RESP2a_READ,
-    SDP_ATTR_RESP2a_READ_END,
-	SDP_ATTR_RESP2b,
-	SDP_ATTR_RESP2b_READ,
-    SDP_ATTR_RESP2b_READ_END,
-	SDP_ATTR_RESP2c,
-    SDP_ATTR_RESP2c_READ,
-    SDP_ATTR_RESP2d_READ_END,
-	SDP_ATTR_RESP3,
-    SDP_ATTR_RESP3_READ,
-	SDP_ATTR_RESP3_READ_END,
-	SDP_ATTR_RESP4a,
-	SDP_ATTR_RESP4a_READ,
-    SDP_ATTR_RESP4a_READ_END,
-	SDP_ATTR_RESP4b,
-	SDP_ATTR_RESP4b_READ,
-    SDP_ATTR_RESP4b_READ_END,
-	SDP_ATTR_RESP4c,
-    SDP_ATTR_RESP4c_READ,
-    SDP_ATTR_RESP4c_READ_END,
-	SDP_ATTR_RESP5,
-    SDP_ATTR_RESP5_READ,
-    SDP_ATTR_RESP5_READ_END,
-	SDP_ATTR_END,
-
-	HID_START,
-    HID_START_RESP,
-    HID_HANDSHAKE_ERR,
-	HID_READ_LED,
-	HCI_CMD_SCAN_DISABLE,
-	HCI_CMD_SCAN_DISABLE_END,
-	HID_WRITE_DATA,
-	HID_WRITE_DATA1,
-	HID_WRITE_DATA2,
-	HID_WRITE_DATA3,
-    HCI_SEQUENCE_END
+    HCI_CMD_RESET = 0,              ///< 0	Initialize the hci when a device is attached
+    HCI_CMD_RESET_END,              ///< 1
+    HCI_CMD_READ_BD_ADDR,           ///< 2
+    HCI_CMD_READ_BD_ADDR_END,       ///< 3
+    HCI_CMD_LOCAL_NAME,             ///< 4
+    HCI_CMD_LOCAL_NAME_END,         ///< 5
+    HCI_CMD_CLASS_DEVICE,           ///< 6
+    HCI_CMD_CLASS_DEVICE_END,       ///< 7
+    HCI_CMD_SCAN_ENABLE,            ///< 8
+    HCI_CMD_SCAN_ENABLE_END,        ///< 9
+    HCI_CMD_WAIT_CONNECTION,        ///< 10
+    HCI_CMD_CONNECTION_ACCEPT,      ///< 11
+    HCI_CMD_CONNECTION_ACCEPT_END,  ///< 12
+    HCI_CMD_CREATE_CONNECTION,      ///< 13
+    HCI_CMD_CONNECTION_COMP,        ///< 14
+    HCI_CMD_SIMPLE_PAIR,            ///< 15
+    HCI_CMD_SIMPLE_PAIR_END,        ///< 16
+    HCI_CMD_EVENT_MASK,             ///< 17
+    HCI_CMD_EVENT_MASK_END,         ///< 18
+    HCI_IOC_REPLY,                  ///< 19
+    HCI_IOC_REPLY_END,              ///< 20
+    HCI_CONF_REPLY,                 ///< 21
+    HCI_CONF_REPLY_END,             ///< 22
+    HCI_SAVE_LINK_KEY,              ///< 23
+    HCI_AUTH_REQ,                   ///< 24
+    HCI_AUTH_REQ_END,               ///< 25
+    HCI_LINK_KEY_REP,               ///< 26
+    HCI_LINK_KEY_REP_END,           ///< 27
+    HCI_SET_ENCRYPT,                ///< 28
+    HCI_SET_ENCRYPT_END,            ///< 29
+    L2CAP_CON_REQ,                  ///< 30
+    L2CAP_CON_RESP,                 ///< 31
+    L2CAP_CONFIG_REQ,               ///< 32
+    L2CAP_CONFIG_RESP,              ///< 33
+    L2CAP_CONFIG_REQ_HOST,          ///< 34
+    L2CAP_CONFIG_RESP_HOST,         ///< 35
+    L2CAP_CONFIG_REQ_HOST_READ_END, ///< 36
+    L2CAP_DISCONNECT_REQ,           ///< 37
+    L2CAP_DISCONNECT_REQ_END,       ///< 38
+    L2CAP_CON_REQ_TO,               ///< 39
+    L2CAP_CON_RESP_FROM,            ///< 40
+    L2CAP_CON_RESP1_FROM,           ///< 41
+    L2CAP_CONFIG_REQ_FROM,          ///< 42
+    L2CAP_CONFIG_RESP_TO,           ///< 43
+    L2CAP_CONFIG_REQ_HOST_TO,       ///< 44
+    L2CAP_CONFIG_RESP_HOST_FROM,    ///< 45
+    SDP_SEARCH_REQ,                 ///< 46
+    SDP_SERCH_RESP,                 ///< 47
+    SDP_SERCH_RESP_MICRO,           ///< 48
+    SDP_ATTR_REQ,                   ///< 49
+    SDP_ATTR_REQ_READ_END,          ///< 50
+    SDP_ATTR_RESP2a,                ///< 51
+    SDP_ATTR_RESP2a_READ,           ///< 52
+    SDP_ATTR_RESP2a_READ_END,       ///< 53
+    SDP_ATTR_RESP2b,                ///< 54
+    SDP_ATTR_RESP2b_READ,           ///< 55
+    SDP_ATTR_RESP2b_READ_END,       ///< 56
+    SDP_ATTR_RESP2c,                ///< 57
+    SDP_ATTR_RESP2c_READ,           ///< 58
+    SDP_ATTR_RESP2d_READ_END,       ///< 59
+    SDP_ATTR_RESP3,                 ///< 60
+    SDP_ATTR_RESP3_READ,            ///< 61
+    SDP_ATTR_RESP3_READ_END,        ///< 62
+    SDP_ATTR_RESP4a,                ///< 63
+    SDP_ATTR_RESP4a_READ,           ///< 64
+    SDP_ATTR_RESP4a_READ_END,       ///< 65
+    SDP_ATTR_RESP4b,                ///< 66
+    SDP_ATTR_RESP4b_READ,           ///< 67
+    SDP_ATTR_RESP4b_READ_END,       ///< 68
+    SDP_ATTR_RESP4c,                ///< 69
+    SDP_ATTR_RESP4c_READ,           ///< 70
+    SDP_ATTR_RESP4c_READ_END,       ///< 71
+    SDP_ATTR_RESP5,                 ///< 72
+    SDP_ATTR_RESP5_READ,            ///< 73
+    SDP_ATTR_RESP5_READ_END,        ///< 74
+    SDP_ATTR_END,                   ///< 75
+    HID_START,                      ///< 76
+    HID_START_RESP,                 ///< 77
+    HID_HANDSHAKE_ERR,              ///< 78
+    HID_READ_LED,                   ///< 79
+    HCI_CMD_SCAN_DISABLE,           ///< 80
+    HCI_CMD_SCAN_DISABLE_END,       ///< 81
+    HID_WRITE_DATA,                 ///< 82
+    HID_WRITE_DATA1,                ///< 83
+    HID_WRITE_DATA2,                ///< 84
+    HID_WRITE_DATA3,                ///< 85
+    HCI_SEQUENCE_END                ///< 86
 } HCI_SEQUENCE;
 
+#define DATA_PACKET_LENGTH  64 ///< データパケット長
 
-static BYTE        sDeviceAddress;  ///< Address of the device on the USB
-static BT_STATE    btState;        ///< Current state of Bluetooth dongle controler.
-static HCI_SEQUENCE   hciSequence;       ///< Current state of the demo application
 
-#define DATA_PACKET_LENGTH  64
-
+///
+/// USBHostGenericClassRequestで指定するパラメータ定義
+///
 typedef struct {
     int size;
     char buf[DATA_PACKET_LENGTH];
-} writeClassParam_t;
-static writeClassParam_t writeClassParam;
+} writeParam_t;
 
+///
+/// USBHostGenericReadで指定するパラメータ定義
+///
 typedef struct {
     int end_num;
     unsigned char buf[DATA_PACKET_LENGTH];
 } readClassParam_t;
-static readClassParam_t readClassParam;
 
-unsigned char ConnectSwitch;
+static unsigned char readAclBuf[DATA_PACKET_LENGTH];
+static unsigned char readHciBuf[DATA_PACKET_LENGTH];
+
+
+static BYTE         sDeviceAddress;       ///< Address of the device on the USB
+static BT_STATE     btState;              ///< Current state of Bluetooth dongle controler.
+static HCI_SEQUENCE hciSequence;          ///< Current sequence position of HCI connection.
+
+
+static writeParam_t writeClassParam;      ///< BT_STATE_WRITE_CLASS で指定するパラメータ
+static readClassParam_t readClassParam;   ///< BE_STATE_READ_CLASS で指定するパラメータ定義
+
+static writeParam_t writeAclParam;        ///< BT_STATE_WRITE_ACL で指定するパラメータ
+
+static unsigned char ConnectSwitch;       ///< 接続スイッチの状態
+static unsigned char aclHandle[2];        ///< Handle for ACL 
+static unsigned char src_cid[2];//HID interrupt (data) after hid_flag=2
+static unsigned char dst_cid[2];
+static unsigned char src_cid1[2];//HID control after hid_flag=3
+static unsigned char dst_cid1[2];
+
+static unsigned char hidState = 0;        ///< HID接続状態
+static unsigned char ep2BusyFlag = 0;     ///< エンドポイント2のビジーフラグ
+
+/// @}
+
 
 static BOOL CheckForNewAttach ( void )
 {
@@ -260,7 +283,9 @@ static BOOL CheckForNewAttach ( void )
 
         if (USBHostGenericGetDeviceAddress(&DevID)) {
             sDeviceAddress = DevID.deviceAddress;
+#ifdef USB_DEBUG
             printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", sDeviceAddress );
+#endif
             return TRUE;
         }
     }
@@ -291,7 +316,7 @@ static void ReadClass( HCI_SEQUENCE nextSequence, int endnum )
     hciSequence = nextSequence;
 }
 
-#define HCI_EXEC_COMMAND( xCurrentState, xNextState, ... ) \
+#define HCI_EXEC_CMD( xCurrentState, xNextState, ... )     \
 	case xCurrentState:                                    \
         WriteClass( xCurrentState ## _END, __VA_ARGS__ );  \
         break;                                             \
@@ -303,26 +328,56 @@ static void ManageHciSequence( void )
 {
     static HCI_SEQUENCE recentHciSequence = HCI_SEQUENCE_END;
     if( recentHciSequence != hciSequence ) {
+#ifdef USB_DEBUG
         printf( "hciSequence Changed %d -> %d\r\n", recentHciSequence, hciSequence );
+#endif
         recentHciSequence = hciSequence;
     }
     
     switch (hciSequence) {
-        HCI_EXEC_COMMAND( HCI_CMD_RESET,        HCI_CMD_READ_BD_ADDR, 3, 0x03, 0x0C, 0x00 );
-        HCI_EXEC_COMMAND( HCI_CMD_READ_BD_ADDR, HCI_CMD_LOCAL_NAME,   3, 0x09, 0x10, 0x00 );
-        HCI_EXEC_COMMAND( HCI_CMD_LOCAL_NAME,   HCI_CMD_CLASS_DEVICE, 7, 0x13, 0x0c, 0x04, 'k', 'e', 'y', 0x00 );
-        HCI_EXEC_COMMAND( HCI_CMD_CLASS_DEVICE, HCI_CMD_SIMPLE_PAIR,  6, 0x24, 0x0c, 0x03, 0x40, 0x05, 0x00 );
-        HCI_EXEC_COMMAND( HCI_CMD_SIMPLE_PAIR,  HCI_CMD_EVENT_MASK,   4, 0x56, 0x0c, 0x01, 0x01 );
-        HCI_EXEC_COMMAND( HCI_CMD_EVENT_MASK,   HCI_CMD_SCAN_ENABLE,  11, 0x01, 0x0c, 0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0xff, 0x00 );
-        HCI_EXEC_COMMAND( HCI_CMD_SCAN_ENABLE,  HCI_CMD_CREATE_CONNECTION, 4, 0x1a, 0x0c, 0x01, 0x03 );
-            
+        HCI_EXEC_CMD( HCI_CMD_RESET,        HCI_CMD_READ_BD_ADDR, 3, 0x03, 0x0C, 0x00 );
+        HCI_EXEC_CMD( HCI_CMD_READ_BD_ADDR, HCI_CMD_LOCAL_NAME,   3, 0x09, 0x10, 0x00 );
+        HCI_EXEC_CMD( HCI_CMD_LOCAL_NAME,   HCI_CMD_CLASS_DEVICE, 7, 0x13, 0x0c, 0x04, 'H', 'H', 'K', 0x00 );
+        HCI_EXEC_CMD( HCI_CMD_CLASS_DEVICE, HCI_CMD_SIMPLE_PAIR,  6, 0x24, 0x0c, 0x03, 0x40, 0x05, 0x00 );
+        HCI_EXEC_CMD( HCI_CMD_SIMPLE_PAIR,  HCI_CMD_EVENT_MASK,   4, 0x56, 0x0c, 0x01, 0x01 );
+        HCI_EXEC_CMD( HCI_CMD_EVENT_MASK,   HCI_CMD_SCAN_ENABLE,  11, 0x01, 0x0c, 0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0xff, 0x00 );
+        HCI_EXEC_CMD( HCI_CMD_SCAN_ENABLE,  HCI_CMD_CREATE_CONNECTION, 4, 0x1a, 0x0c, 0x01, 0x03 );
+        
         case HCI_CMD_WAIT_CONNECTION:
+            ReadClass( HCI_CMD_CONNECTION_ACCEPT, 0x04 );
+            break;
+
         case HCI_CMD_CONNECTION_ACCEPT:
-        case HCI_CMD_CONNECTION_ACCEPT_WRITE_END:
-
+            DataEEWrite( readClassParam.buf[2], 1 );
+            DataEEWrite( readClassParam.buf[3], 2 );
+            DataEEWrite( readClassParam.buf[4], 3 );
+            DataEEWrite( readClassParam.buf[5], 4 );
+            DataEEWrite( readClassParam.buf[6], 5 );
+            DataEEWrite( readClassParam.buf[7], 6 );
+            WriteClass( HCI_CMD_CONNECTION_ACCEPT_END, 10, 0x09, 0x04, 0x07,
+                        DataEERead(1),DataEERead(2),DataEERead(3),
+                        DataEERead(4),DataEERead(5),DataEERead(6), 0x01 );
+            break;
+                          
+        case HCI_CMD_CONNECTION_ACCEPT_END:
+            ReadClass( L2CAP_CON_REQ, 0x03 );
+            break;
+            
         case HCI_CMD_CREATE_CONNECTION:
+			if( ConnectSwitch != 1 ) { //GOTO FIRST CONNECTION
+                hciSequence = HCI_CMD_WAIT_CONNECTION;
+                break;
+            }
+            WriteClass( HCI_CMD_CONNECTION_COMP, 16,
+                        0x05, 0x04, 0x0d,
+                        DataEERead(1),DataEERead(2),DataEERead(3),
+                        DataEERead(4),DataEERead(5),DataEERead(6),
+                        0x10, 0x00, 0x00, 0x00, 0xc2, 0xb0, 0x00 );
+            break;
         case HCI_CMD_CONNECTION_COMP:
-
+            ReadClass( HCI_AUTH_REQ, 0x03 );
+            break;
+            
         case HCI_IOC_REPLY:
         case HCI_IOC_REPLY_END:
         case HCI_CONF_REPLY:
@@ -337,8 +392,49 @@ static void ManageHciSequence( void )
         case HCI_SET_ENCRYPT_END:
 
         case L2CAP_CON_REQ:
+            aclHandle[0] = readClassParam.buf[3];
+            aclHandle[1] = readClassParam.buf[4] + 0x20;
+            btState = BT_STATE_READ_ACL_HCI;
+            hciSequence = L2CAP_CON_RESP;
+            break;
+            
         case L2CAP_CON_RESP:
+            if( readAclBuf[12] == 0x11 ) {
+                hidState = 2;
+            }
+            writeAclParam.size = 20;
+            memcpy( writeAclParam.buf, readAclBuf, 20 ); // 元のソースでは特に指定がない
+            writeAclParam.buf[2]  = 0x10;
+            writeAclParam.buf[4]  = 0x0c;
+            writeAclParam.buf[8]  = 0x03;
+            writeAclParam.buf[10] = 0x08;
+            writeAclParam.buf[12] = readAclBuf[14] + 4;
+            writeAclParam.buf[13] = readAclBuf[15];
+            writeAclParam.buf[16] = 0x00;
+            writeAclParam.buf[17] = 0x00;
+            writeAclParam.buf[18] = 0x00;
+            writeAclParam.buf[19] = 0x00;
+
+            dst_cid[0] = writeAclParam.buf[12];
+            dst_cid[1] = writeAclParam.buf[13];
+            src_cid[0] = writeAclParam.buf[14];
+            src_cid[1] = writeAclParam.buf[15];
+
+            if( hidState == 2 ) {
+                dst_cid1[0] = writeAclParam.buf[12];
+                dst_cid1[1] = writeAclParam.buf[13];
+                src_cid1[0] = writeAclParam.buf[14];
+                src_cid1[1] = writeAclParam.buf[15];
+            }
+
+            btState = BT_STATE_WRITE_ACL;
+            hciSequence = L2CAP_CONFIG_REQ;
+
+            break;
+
         case L2CAP_CONFIG_REQ:
+            
+
         case L2CAP_CONFIG_RESP:
         case L2CAP_CONFIG_REQ_HOST:
         case L2CAP_CONFIG_RESP_HOST:
@@ -395,7 +491,7 @@ static void ManageHciSequence( void )
         case HID_WRITE_DATA1:
         case HID_WRITE_DATA2:
         case HID_WRITE_DATA3:
-        default:
+        case HCI_SEQUENCE_END:
             break;
     }
 }
@@ -404,14 +500,20 @@ static void ManageBluetoothState ( void )
 {
     BYTE RetVal;
     static BT_STATE recentBtState = BT_STATE_END;
-    if( recentBtState != btState ) {
-        // printf( "btState Changed %d -> %d\r\n", recentBtState, btState );
+    static BT_STATE recentRecentBtState = BT_STATE_END;
+    if( recentBtState != btState && recentRecentBtState != btState ) {
+#ifdef USB_DEBUG
+        printf( "btState Changed %d -> %d -> %d\r\n", recentRecentBtState, recentBtState, btState );
+#endif
+        recentRecentBtState = recentBtState;
         recentBtState = btState;
     }
 
     // Watch for device detaching
     if (USBHostGenericDeviceDetached(sDeviceAddress) && sDeviceAddress != 0) {
+#ifdef USB_DEBUG
         printf( "Generic demo device detached - polled\r\n" );
+#endif
         btState  = BT_INITIALIZE;
 		hciSequence = HCI_CMD_RESET;
         sDeviceAddress   = 0;
@@ -438,66 +540,162 @@ static void ManageBluetoothState ( void )
                 if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
                                                            (BYTE *)writeClassParam.buf,
                                                            writeClassParam.size )) == USB_SUCCESS ) {
-                    printf( "HCI CMD " );	
+#ifdef USB_DEBUG
+                    printf( "CMD " );	
                     int i;
                     for( i = 0; i < writeClassParam.size; i++ ) {
                         printf( " %02X", *( (BYTE *)writeClassParam.buf + i ) );
                     }
                     printf( "\r\n" );
+#endif
                     btState = BT_STATE_ATTACHED;
                 } else {
+#ifdef USB_DEBUG
                     printf( "Write Class Error (%02X) !\r\n", RetVal );	
+#endif
                     btState = BT_STATE_ERROR;
                 }
             }
             break;
             
         case BT_STATE_READ_CLASS:
-            if (!USBHostGenericRx1IsBusy(sDeviceAddress)) {
-                if ( (RetVal=USBHostGenericRead(sDeviceAddress, readClassParam.buf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
+            if (!USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
+                if ( (RetVal = USBHostGenericRead( sDeviceAddress, readClassParam.buf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
                     btState = BT_STATE_READ_CLASS_WAITING;
                 } else {
+#ifdef USB_DEBUG
                     printf( "Device Read Error !\r\n" );
+#endif
                     btState = BT_STATE_ERROR;
                 }
             }
             break;
             
         case BT_STATE_READ_CLASS_WAITING:
-            if (!USBHostGenericRx1IsBusy(sDeviceAddress)) {
+            if ( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
                 if( readClassParam.buf[0] != readClassParam.end_num) {
                     btState = BT_STATE_READ_CLASS;
                 } else {
-                    printf( "HCI EVT " );	
+#ifdef USB_DEBUG
+                    printf( "EVT " );	
                     int i;
                     for( i = 0; i < readClassParam.buf[1]+2; i++ ) {
                         printf( " %02X", readClassParam.buf[i] );
                     }
                     printf( "\r\n" );
+#endif
                     btState = BT_STATE_ATTACHED;
                 }
             }
             break;
             
         case BT_STATE_WRITE_ACL:
+            if ( !USBHostGenericTxIsBusy(sDeviceAddress) ) {
+                if ( (RetVal = USBHostGenericAclWrite( sDeviceAddress, writeAclParam.buf, writeAclParam.size )) == USB_SUCCESS ) {
+#ifdef USB_DEBUG
+                    printf( "W ACL " );
+                    int i;
+                    for( i = 0; i < writeAclParam.size; i++ ) {
+                        printf( " %02X", *( (BYTE *)writeAclParam.buf + i ) );
+                    }
+                    printf( "\r\n" );
+#endif
+                    btState = BT_STATE_ATTACHED;
+                } else {
+#ifdef USB_DEBUG
+                    printf( "Write Acl Error !\r\n" );	
+#endif
+                }
+            }
             break;
             
         case BT_STATE_READ_ACL_HCI:
+            if( ep2BusyFlag == 1 ) {
+                btState = BT_STATE_READ_ACL_WAITING;
+            } else if ( !USBHostGenericRx2IsBusy( sDeviceAddress ) ) {
+                if ( ( RetVal = USBHostGenericAclRead( sDeviceAddress, readAclBuf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
+                    btState = BT_STATE_READ_ACL_WAITING;
+                } else {
+#ifdef USB_DEBUG
+                    printf( "Read Acl Error !\r\n" );
+#endif
+                }
+            }
             break;
             
         case BT_STATE_READ_ACL_WAITING:
-            break;
-            
-        case BT_STATE_READ_HCI_WAITING:
+            if ( !USBHostGenericRx2IsBusy( sDeviceAddress) )  {
+#ifdef USB_DEBUG
+                printf( "R ACL " );
+                int i;
+                for( i = 0; i < readAclBuf[2] + 4; i++ ) {
+                    printf( " %02X", *( (BYTE *)readAclBuf + i ) );
+                }
+                printf( "\r\n" );
+#endif
+                ep2BusyFlag=0;			
+                btState = BT_STATE_READ_HCI;
+            } else if( hidState != 3 ) {
+                ep2BusyFlag = 1;
+                btState = BT_STATE_READ_HCI;
+            }
             break;
             
         case BT_STATE_READ_HCI:
+            if( ep2BusyFlag == 0 ) {
+                readHciBuf[0] = 0xff;
+            }
+            if ( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
+                if ( (RetVal = USBHostGenericRead( sDeviceAddress, readHciBuf, DATA_PACKET_LENGTH ) ) == USB_SUCCESS ) {
+                    btState = BT_STATE_READ_HCI_WAITING;
+#ifdef USB_DEBUG
+                    printf( "READ HCI\r\n" );
+#endif
+                } else {
+#ifdef USB_DEBUG
+                    printf( "Device Read Error !\r\n" );
+#endif
+                }
+            }
             break;
 
+        case BT_STATE_READ_HCI_WAITING:
+            if( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
+#ifdef USB_DEBUG
+                printf( "R HCI " );
+                int i;
+                for( i = 0; i < readHciBuf[2] + 4; i++ ) {
+                    printf( " %02X", *( (BYTE *)readHciBuf + i ) );
+                }
+                printf( "\r\n" );
+#endif                
+                if( ep2BusyFlag == 0 ) {
+                    if(readHciBuf[0] == 0xff ) {
+                        btState = BT_STATE_ATTACHED;
+                    } else if( readHciBuf[0] == 0x31 ) {
+                        hciSequence = HCI_IOC_REPLY;
+                        btState = BT_STATE_ATTACHED;
+                    } else {
+                        btState = BT_STATE_READ_HCI;
+                    }
+                } else {
+                    if( readHciBuf[0] == 0x05 ) {
+                        hciSequence = L2CAP_DISCONNECT_REQ;
+                        btState = BT_STATE_ATTACHED;
+                    } else if( readHciBuf[0] == 0x31 ) {
+                        hciSequence = HCI_IOC_REPLY;
+                        btState = BT_STATE_ATTACHED;
+                    } else {
+                        btState = BT_STATE_READ_ACL_WAITING;}
+                }
+            }
+            break;
+            
         case BT_STATE_ERROR:
+            btState = BT_INITIALIZE;
             break;
 
-        default:
+        case BT_STATE_END:
             btState = BT_INITIALIZE;
             break;
     }
@@ -631,6 +829,8 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
  */
 void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
 {
+    printf( "{%d}", PORTBbits.RB7 );
+    
 	LATBbits.LATB15=!LATBbits.LATB15;
 	Int0_Clear_Intr_Status_Bit;
 }
