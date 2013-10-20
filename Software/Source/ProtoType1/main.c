@@ -128,7 +128,7 @@ typedef enum
 } BT_STATE;
 
 ///
-/// Hci States
+/// Hci Sequence
 ///
 typedef enum
 {
@@ -225,13 +225,13 @@ typedef enum
 	HID_WRITE_DATA1,
 	HID_WRITE_DATA2,
 	HID_WRITE_DATA3,
-    HCI_STATE_END
-} HCI_STATE;
+    HCI_SEQUENCE_END
+} HCI_SEQUENCE;
 
 
 static BYTE        sDeviceAddress;  ///< Address of the device on the USB
 static BT_STATE    btState;        ///< Current state of Bluetooth dongle controler.
-static HCI_STATE   hciState;       ///< Current state of the demo application
+static HCI_SEQUENCE   hciSequence;       ///< Current state of the demo application
 
 #define DATA_PACKET_LENGTH  64
 
@@ -269,7 +269,7 @@ static BOOL CheckForNewAttach ( void )
 
 }
 
-static void WriteClass( HCI_STATE nextState, size_t length, ... )
+static void WriteClass( HCI_SEQUENCE nextSequence, size_t length, ... )
 {
     va_list args;
     va_start( args, length );
@@ -281,14 +281,14 @@ static void WriteClass( HCI_STATE nextState, size_t length, ... )
         writeClassParam.buf[i] = va_arg( args, BYTE );
     }
     btState  = BT_STATE_WRITE_CLASS;
-    hciState = nextState;
+    hciSequence = nextSequence;
 }
 
-static void ReadClass( HCI_STATE nextState, int endnum )
+static void ReadClass( HCI_SEQUENCE nextSequence, int endnum )
 {
     readClassParam.end_num = endnum;
     btState  = BT_STATE_READ_CLASS;
-    hciState = nextState;
+    hciSequence = nextSequence;
 }
 
 #define HCI_EXEC_COMMAND( xCurrentState, xNextState, ... ) \
@@ -299,15 +299,15 @@ static void ReadClass( HCI_STATE nextState, int endnum )
         ReadClass( xNextState, 0x0e );                     \
         break
 
-static void ManageHciState( void )
+static void ManageHciSequence( void )
 {
-    static HCI_STATE recentHciState = HCI_STATE_END;
-    if( recentHciState != hciState ) {
-        printf( "hciState Changed %d -> %d\r\n", recentHciState, hciState );
-        recentHciState = hciState;
+    static HCI_SEQUENCE recentHciSequence = HCI_SEQUENCE_END;
+    if( recentHciSequence != hciSequence ) {
+        printf( "hciSequence Changed %d -> %d\r\n", recentHciSequence, hciSequence );
+        recentHciSequence = hciSequence;
     }
     
-    switch (hciState) {
+    switch (hciSequence) {
         HCI_EXEC_COMMAND( HCI_CMD_RESET,        HCI_CMD_READ_BD_ADDR, 3, 0x03, 0x0C, 0x00 );
         HCI_EXEC_COMMAND( HCI_CMD_READ_BD_ADDR, HCI_CMD_LOCAL_NAME,   3, 0x09, 0x10, 0x00 );
         HCI_EXEC_COMMAND( HCI_CMD_LOCAL_NAME,   HCI_CMD_CLASS_DEVICE, 7, 0x13, 0x0c, 0x04, 'k', 'e', 'y', 0x00 );
@@ -413,7 +413,7 @@ static void ManageBluetoothState ( void )
     if (USBHostGenericDeviceDetached(sDeviceAddress) && sDeviceAddress != 0) {
         printf( "Generic demo device detached - polled\r\n" );
         btState  = BT_INITIALIZE;
-		hciState = HCI_CMD_RESET;
+		hciSequence = HCI_CMD_RESET;
         sDeviceAddress   = 0;
     }
 
@@ -430,7 +430,7 @@ static void ManageBluetoothState ( void )
             break;
 
         case BT_STATE_ATTACHED:
-            ManageHciState();
+            ManageHciSequence();
             break;
 
         case BT_STATE_WRITE_CLASS:
@@ -546,7 +546,7 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
             {
                 sDeviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
                 btState  = BT_STATE_ATTACHED;
-                hciState = HCI_CMD_RESET;
+                hciSequence = HCI_CMD_RESET;
                 printf( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", sDeviceAddress );
                 return TRUE;
             }
@@ -664,7 +664,7 @@ int main(void) {
 
     // Set Default Bluetooth dongle controler state
     btState = BT_INITIALIZE;
-    hciState = HCI_CMD_RESET;
+    hciSequence = HCI_CMD_RESET;
     
     // EE
     DataEEInit();
