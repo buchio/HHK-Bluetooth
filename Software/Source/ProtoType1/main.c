@@ -104,6 +104,19 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 
 #define USB_DEBUG
 
+#ifdef USB_DEBUG
+#define DEBUG_PRINTF( ... ) printf( __VA_ARGS__ )
+#define DEBUG_DUMP( xName, xBuf, xSize ) { \
+        printf( xName );                   \
+        for( i = 0; i < xSize; i++ ) {                  \
+            printf( " %02X", *( (BYTE*)xBuf + i ) );    \
+        }                                               \
+        printf( "\r\n" );                               \
+    }
+#else
+#define DEBUG_PRINTF( ... ) {}
+#define DEBUG_DUMP( xName, xBuf, xSize ) {}
+#endif
 
 /// \defgroup USB USBホスト処理
 /// @{
@@ -245,8 +258,8 @@ typedef struct {
     unsigned char buf[DATA_PACKET_LENGTH];
 } readClassParam_t;
 
-static unsigned char readAclBuf[DATA_PACKET_LENGTH];
-static unsigned char readHciBuf[DATA_PACKET_LENGTH];
+
+static int i;                             ///< 汎用イテレータ
 
 
 static BYTE         sDeviceAddress;       ///< Address of the device on the USB
@@ -259,12 +272,15 @@ static readClassParam_t readClassParam;   ///< BE_STATE_READ_CLASS で指定す�
 
 static writeParam_t writeAclParam;        ///< BT_STATE_WRITE_ACL で指定するパラメータ
 
+static unsigned char readAclBuf[DATA_PACKET_LENGTH];
+static unsigned char readHciBuf[DATA_PACKET_LENGTH];
+
 static unsigned char ConnectSwitch;       ///< 接続スイッチの状態
 static unsigned char aclHandle[2];        ///< Handle for ACL 
-static unsigned char src_cid[2];//HID interrupt (data) after hid_flag=2
-static unsigned char dst_cid[2];
-static unsigned char src_cid1[2];//HID control after hid_flag=3
-static unsigned char dst_cid1[2];
+static unsigned char src_cid[2];          ///< HID interrupt (data) after hidState == 2
+static unsigned char dst_cid[2];          ///< 
+static unsigned char src_cid1[2];         ///< HID control after hidState == 3
+static unsigned char dst_cid1[2];         ///< 
 
 static unsigned char hidState = 0;        ///< HID接続状態
 static unsigned char ep2BusyFlag = 0;     ///< エンドポイント2のビジーフラグ
@@ -283,9 +299,7 @@ static BOOL CheckForNewAttach ( void )
 
         if (USBHostGenericGetDeviceAddress(&DevID)) {
             sDeviceAddress = DevID.deviceAddress;
-#ifdef USB_DEBUG
-            printf( "Generic demo device attached - polled, deviceAddress= %d\r\n", sDeviceAddress );
-#endif
+            DEBUG_PRINTF( "Generic demo device attached - polled, deviceAddress= %d\r\n", sDeviceAddress );
             return TRUE;
         }
     }
@@ -328,9 +342,7 @@ static void ManageHciSequence( void )
 {
     static HCI_SEQUENCE recentHciSequence = HCI_SEQUENCE_END;
     if( recentHciSequence != hciSequence ) {
-#ifdef USB_DEBUG
-        printf( "hciSequence Changed %d -> %d\r\n", recentHciSequence, hciSequence );
-#endif
+        DEBUG_PRINTF( "hciSequence Changed %d -> %d\r\n", recentHciSequence, hciSequence );
         recentHciSequence = hciSequence;
     }
     
@@ -378,14 +390,15 @@ static void ManageHciSequence( void )
             ReadClass( HCI_AUTH_REQ, 0x03 );
             break;
             
+        case HCI_AUTH_REQ:
+        case HCI_AUTH_REQ_END:
+
         case HCI_IOC_REPLY:
         case HCI_IOC_REPLY_END:
         case HCI_CONF_REPLY:
         case HCI_CONF_REPLY_END:
         case HCI_SAVE_LINK_KEY:
 
-        case HCI_AUTH_REQ:
-        case HCI_AUTH_REQ_END:
         case HCI_LINK_KEY_REP:
         case HCI_LINK_KEY_REP_END:
         case HCI_SET_ENCRYPT:
@@ -502,18 +515,14 @@ static void ManageBluetoothState ( void )
     static BT_STATE recentBtState = BT_STATE_END;
     static BT_STATE recentRecentBtState = BT_STATE_END;
     if( recentBtState != btState && recentRecentBtState != btState ) {
-#ifdef USB_DEBUG
-        printf( "btState Changed %d -> %d -> %d\r\n", recentRecentBtState, recentBtState, btState );
-#endif
+        DEBUG_PRINTF( "btState Changed %d -> %d -> %d\r\n", recentRecentBtState, recentBtState, btState );
         recentRecentBtState = recentBtState;
         recentBtState = btState;
     }
 
     // Watch for device detaching
     if (USBHostGenericDeviceDetached(sDeviceAddress) && sDeviceAddress != 0) {
-#ifdef USB_DEBUG
-        printf( "Generic demo device detached - polled\r\n" );
-#endif
+        DEBUG_PRINTF( "Generic demo device detached - polled\r\n" );
         btState  = BT_INITIALIZE;
 		hciSequence = HCI_CMD_RESET;
         sDeviceAddress   = 0;
@@ -540,19 +549,10 @@ static void ManageBluetoothState ( void )
                 if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
                                                            (BYTE *)writeClassParam.buf,
                                                            writeClassParam.size )) == USB_SUCCESS ) {
-#ifdef USB_DEBUG
-                    printf( "CMD " );	
-                    int i;
-                    for( i = 0; i < writeClassParam.size; i++ ) {
-                        printf( " %02X", *( (BYTE *)writeClassParam.buf + i ) );
-                    }
-                    printf( "\r\n" );
-#endif
+                    DEBUG_DUMP( "CMD ", writeClassParam.buf, writeClassParam.size );
                     btState = BT_STATE_ATTACHED;
                 } else {
-#ifdef USB_DEBUG
-                    printf( "Write Class Error (%02X) !\r\n", RetVal );	
-#endif
+                    DEBUG_PRINTF( "Write Class Error (%02X) !\r\n", RetVal );	
                     btState = BT_STATE_ERROR;
                 }
             }
@@ -563,9 +563,7 @@ static void ManageBluetoothState ( void )
                 if ( (RetVal = USBHostGenericRead( sDeviceAddress, readClassParam.buf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
                     btState = BT_STATE_READ_CLASS_WAITING;
                 } else {
-#ifdef USB_DEBUG
-                    printf( "Device Read Error !\r\n" );
-#endif
+                    DEBUG_PRINTF( "Device Read Error !\r\n" );
                     btState = BT_STATE_ERROR;
                 }
             }
@@ -576,14 +574,7 @@ static void ManageBluetoothState ( void )
                 if( readClassParam.buf[0] != readClassParam.end_num) {
                     btState = BT_STATE_READ_CLASS;
                 } else {
-#ifdef USB_DEBUG
-                    printf( "EVT " );	
-                    int i;
-                    for( i = 0; i < readClassParam.buf[1]+2; i++ ) {
-                        printf( " %02X", readClassParam.buf[i] );
-                    }
-                    printf( "\r\n" );
-#endif
+                    DEBUG_DUMP( "EVT ", readClassParam.buf, readClassParam.buf[1]+2 );
                     btState = BT_STATE_ATTACHED;
                 }
             }
@@ -592,19 +583,10 @@ static void ManageBluetoothState ( void )
         case BT_STATE_WRITE_ACL:
             if ( !USBHostGenericTxIsBusy(sDeviceAddress) ) {
                 if ( (RetVal = USBHostGenericAclWrite( sDeviceAddress, writeAclParam.buf, writeAclParam.size )) == USB_SUCCESS ) {
-#ifdef USB_DEBUG
-                    printf( "W ACL " );
-                    int i;
-                    for( i = 0; i < writeAclParam.size; i++ ) {
-                        printf( " %02X", *( (BYTE *)writeAclParam.buf + i ) );
-                    }
-                    printf( "\r\n" );
-#endif
+                    DEBUG_DUMP( "W ACL ", writeAclParam.buf, writeAclParam.size );
                     btState = BT_STATE_ATTACHED;
                 } else {
-#ifdef USB_DEBUG
-                    printf( "Write Acl Error !\r\n" );	
-#endif
+                    DEBUG_PRINTF( "Write Acl Error !\r\n" );	
                 }
             }
             break;
@@ -616,23 +598,14 @@ static void ManageBluetoothState ( void )
                 if ( ( RetVal = USBHostGenericAclRead( sDeviceAddress, readAclBuf, DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
                     btState = BT_STATE_READ_ACL_WAITING;
                 } else {
-#ifdef USB_DEBUG
-                    printf( "Read Acl Error !\r\n" );
-#endif
+                    DEBUG_PRINTF( "Read Acl Error !\r\n" );
                 }
             }
             break;
             
         case BT_STATE_READ_ACL_WAITING:
             if ( !USBHostGenericRx2IsBusy( sDeviceAddress) )  {
-#ifdef USB_DEBUG
-                printf( "R ACL " );
-                int i;
-                for( i = 0; i < readAclBuf[2] + 4; i++ ) {
-                    printf( " %02X", *( (BYTE *)readAclBuf + i ) );
-                }
-                printf( "\r\n" );
-#endif
+                DEBUG_DUMP( "R ACL ", readAclBuf, readAclBuf[2] + 4 );
                 ep2BusyFlag=0;			
                 btState = BT_STATE_READ_HCI;
             } else if( hidState != 3 ) {
@@ -648,27 +621,16 @@ static void ManageBluetoothState ( void )
             if ( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
                 if ( (RetVal = USBHostGenericRead( sDeviceAddress, readHciBuf, DATA_PACKET_LENGTH ) ) == USB_SUCCESS ) {
                     btState = BT_STATE_READ_HCI_WAITING;
-#ifdef USB_DEBUG
-                    printf( "READ HCI\r\n" );
-#endif
+                    DEBUG_PRINTF( "READ HCI\r\n" );
                 } else {
-#ifdef USB_DEBUG
-                    printf( "Device Read Error !\r\n" );
-#endif
+                    DEBUG_PRINTF( "Device Read Error !\r\n" );
                 }
             }
             break;
 
         case BT_STATE_READ_HCI_WAITING:
             if( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
-#ifdef USB_DEBUG
-                printf( "R HCI " );
-                int i;
-                for( i = 0; i < readHciBuf[2] + 4; i++ ) {
-                    printf( " %02X", *( (BYTE *)readHciBuf + i ) );
-                }
-                printf( "\r\n" );
-#endif                
+                DEBUG_DUMP( "R HCI ", readHciBuf, readHciBuf[2] + 4 );
                 if( ep2BusyFlag == 0 ) {
                     if(readHciBuf[0] == 0xff ) {
                         btState = BT_STATE_ATTACHED;
@@ -734,7 +696,7 @@ static void ManageBluetoothState ( void )
  */
 BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DWORD size )
 {
-    //printf( "USB_ApplicationEventHandler : %d\r\n", (int)event );
+    // DEBUG_PRINTF( "USB_ApplicationEventHandler : %d\r\n", (int)event );
     
     // Handle specific events.
     switch ( (INT)event )
@@ -745,7 +707,7 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
                 sDeviceAddress   = ((GENERIC_DEVICE_ID *)data)->deviceAddress;
                 btState  = BT_STATE_ATTACHED;
                 hciSequence = HCI_CMD_RESET;
-                printf( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", sDeviceAddress );
+                DEBUG_PRINTF( "Bluetooth dongle attached - event, deviceAddress=%d\r\n", sDeviceAddress );
                 return TRUE;
             }
             break;
@@ -753,7 +715,7 @@ BOOL USB_ApplicationEventHandler ( BYTE address, USB_EVENT event, void *data, DW
         case EVENT_GENERIC_DETACH:
             sDeviceAddress   = 0;
             btState = BT_INITIALIZE;
-            printf( "Bluetooth dongle detached - event\r\n" );
+            DEBUG_PRINTF( "Bluetooth dongle detached - event\r\n" );
             return TRUE;
 
         case EVENT_GENERIC_TX_DONE:           // The main state machine will poll the driver.
