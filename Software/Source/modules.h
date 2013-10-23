@@ -35,6 +35,28 @@
 /// \defgroup Modules ソフトウェアモジュール
 /// @{
 
+/// \defgroup DEBUG Debug用モジュール
+/// @{
+
+#ifdef DEBUG_OUTPUT
+#define DEBUG_PRINTF( ... ) printf( __VA_ARGS__ )
+#define DEBUG_DUMP( xName, xBuf, xSize ) {              \
+        int i;                                          \
+        printf( xName );                                \
+        for( i = 0; i < xSize; i++ ) {                  \
+            printf( " %02X", *( (BYTE*)xBuf + i ) );    \
+        }                                               \
+        printf( "\r\n" );                               \
+    }
+#else
+#define DEBUG_PRINTF( ... ) {}
+#define DEBUG_DUMP( xName, xBuf, xSize ) {}
+#endif
+
+/// @}
+
+
+
 /// \defgroup PLL PLL操作
 /// @{
 #define PLL_INITIALIZE() {                  \
@@ -60,6 +82,12 @@ int Uart1ReceiveQueueSize( void );
 /// @}
 
 /// \defgroup Bluetooth Bluetooth関連モジュール
+
+/// Bluetooth初期化
+void BTInit( void );
+
+/// Bluetoothタスク
+void BTTask( void );
 
 
 /// @}
