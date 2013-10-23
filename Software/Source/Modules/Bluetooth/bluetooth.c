@@ -121,9 +121,11 @@ void ManageHciSequence( void )
             DataEEWrite( recvHciCommandParam.buf[5], 4 );
             DataEEWrite( recvHciCommandParam.buf[6], 5 );
             DataEEWrite( recvHciCommandParam.buf[7], 6 );
-            SendHciCommand( HCI_CMD_CONNECTION_ACCEPT_END, 10, 0x09, 0x04, 0x07,
+            SendHciCommand( HCI_CMD_CONNECTION_ACCEPT_END, 10,
+                            0x09, 0x04, 0x07,
                             DataEERead(1),DataEERead(2),DataEERead(3),
-                            DataEERead(4),DataEERead(5),DataEERead(6), 0x01 );
+                            DataEERead(4),DataEERead(5),DataEERead(6),
+                            0x01 );
             break;
                           
         case HCI_CMD_CONNECTION_ACCEPT_END:
