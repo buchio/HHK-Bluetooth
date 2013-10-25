@@ -36,11 +36,11 @@ void BTTask( void )
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 sendParam_t sendHciCommandParam;      ///< BT_STATE_SEND_HCI_COMMAND で指定するパラメータ
-recvHciCommandParam_t recvHciCommandParam;   ///< BE_STATE_RECV_HCI_EVENT で指定するパラメータ定義
+recvHciEventParam_t recvHciEventParam;   ///< BE_STATE_RECV_HCI_EVENT で指定するパラメータ定義
 sendParam_t sendAclDataParam;        ///< BT_STATE_SEND_ACL で指定するパラメータ
 unsigned char recvAclBuf[DATA_PACKET_LENGTH];
 unsigned char recvHciBuf[DATA_PACKET_LENGTH];
@@ -49,9 +49,9 @@ BT_STATE     btState;              ///< Current state of Bluetooth dongle contro
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 static BYTE         sDeviceAddress;       ///< Address of the device on the USB
 static unsigned char ep2BusyFlag = 0;     ///< エンドポイント2のビジーフラグ
 
@@ -67,7 +67,8 @@ static BOOL CheckForNewAttach ( void )
 
         if (USBHostGenericGetDeviceAddress(&DevID)) {
             sDeviceAddress = DevID.deviceAddress;
-            DEBUG_PRINTF( "Generic demo device attached - polled, deviceAddress= %d\r\n", sDeviceAddress );
+            DEBUG_PRINTF( "Generic demo device attached - polled, deviceAddress= %d\r\n",
+                          sDeviceAddress );
             return TRUE;
         }
     }
@@ -80,7 +81,8 @@ void ManageBluetoothState ( void )
     static BT_STATE recentBtState = BT_STATE_END;
     static BT_STATE recentRecentBtState = BT_STATE_END;
     if( recentBtState != btState && recentRecentBtState != btState ) {
-        DEBUG_PRINTF( "btState Changed %d -> %d -> %d\r\n", recentRecentBtState, recentBtState, btState );
+        DEBUG_PRINTF( "btState Changed %d -> %d -> %d\r\n", recentRecentBtState,
+                      recentBtState, btState );
         recentRecentBtState = recentBtState;
         recentBtState = btState;
     }
@@ -111,10 +113,10 @@ void ManageBluetoothState ( void )
 
         case BT_STATE_SEND_HCI_COMMAND:
             if (!USBHostGenericTxIsBusy(sDeviceAddress)) {
-                if ( (RetVal = USBHostGenericClassRequest( sDeviceAddress,
-                                                           (BYTE *)sendHciCommandParam.buf,
-                                                           sendHciCommandParam.size )) == USB_SUCCESS ) {
-                    DEBUG_DUMP( "CMD ", sendHciCommandParam.buf, sendHciCommandParam.size );
+                if((RetVal = USBHostGenericClassRequest( sDeviceAddress,
+                                                         (BYTE *)sendHciCommandParam.buf,
+                                                         sendHciCommandParam.size )) == USB_SUCCESS ) {
+                    DEBUG_DUMP( "Send CMD ", sendHciCommandParam.buf, sendHciCommandParam.size );
                     btState = BT_STATE_ATTACHED;
                 } else {
                     DEBUG_PRINTF( "Write Error (%02X) !\r\n", RetVal );	
@@ -126,7 +128,7 @@ void ManageBluetoothState ( void )
         case BT_STATE_RECV_HCI_EVENT:
             if (!USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
                 if ( (RetVal = USBHostGenericRead( sDeviceAddress,
-                                                   recvHciCommandParam.buf,
+                                                   recvHciEventParam.buf,
                                                    DATA_PACKET_LENGTH)) == USB_SUCCESS ) {
                     btState = BT_STATE_RECV_HCI_EVENT_WAITING;
                 } else {
@@ -138,10 +140,10 @@ void ManageBluetoothState ( void )
             
         case BT_STATE_RECV_HCI_EVENT_WAITING:
             if ( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
-                if( recvHciCommandParam.buf[0] != recvHciCommandParam.eventCode) {
+                if( recvHciEventParam.buf[0] != recvHciEventParam.eventCode) {
                     btState = BT_STATE_RECV_HCI_EVENT;
                 } else {
-                    DEBUG_DUMP( "EVT ", recvHciCommandParam.buf, recvHciCommandParam.buf[1]+2 );
+                    DEBUG_DUMP( "Recv EVT ", recvHciEventParam.buf, recvHciEventParam.buf[1]+2 );
                     btState = BT_STATE_ATTACHED;
                 }
             }
@@ -152,7 +154,7 @@ void ManageBluetoothState ( void )
                 if ( (RetVal = USBHostGenericAclWrite( sDeviceAddress,
                                                        sendAclDataParam.buf,
                                                        sendAclDataParam.size )) == USB_SUCCESS ) {
-                    DEBUG_DUMP( "W ACL ", sendAclDataParam.buf, sendAclDataParam.size );
+                    DEBUG_DUMP( "Send ACL ", sendAclDataParam.buf, sendAclDataParam.size );
                     btState = BT_STATE_ATTACHED;
                 } else {
                     DEBUG_PRINTF( "Write Acl Error !\r\n" );	
@@ -176,7 +178,7 @@ void ManageBluetoothState ( void )
             
         case BT_STATE_RECV_ACL_WAITING:
             if ( !USBHostGenericRx2IsBusy( sDeviceAddress) )  {
-                DEBUG_DUMP( "R ACL ", recvAclBuf, recvAclBuf[2] + 4 );
+                DEBUG_DUMP( "Recv ACL ", recvAclBuf, recvAclBuf[2] + 4 );
                 ep2BusyFlag=0;			
                 btState = BT_STATE_RECV_HCI;
             } else if( hidState != 3 ) {
@@ -203,7 +205,7 @@ void ManageBluetoothState ( void )
 
         case BT_STATE_RECV_HCI_WAITING:
             if( !USBHostGenericRx1IsBusy( sDeviceAddress ) ) {
-                DEBUG_DUMP( "R HCI ", recvHciBuf, recvHciBuf[2] + 4 );
+                DEBUG_DUMP( "Recv HCI ", recvHciBuf, recvHciBuf[2] + 4 );
                 if( ep2BusyFlag == 0 ) {
                     if(recvHciBuf[0] == 0xff ) {
                         btState = BT_STATE_ATTACHED;

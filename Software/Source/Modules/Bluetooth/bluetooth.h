@@ -20,7 +20,7 @@ typedef enum
     HCI_CMD_CONNECTION_ACCEPT,      ///< 11
     HCI_CMD_CONNECTION_ACCEPT_END,  ///< 12
     HCI_CMD_CREATE_CONNECTION,      ///< 13
-    HCI_CMD_CONNECTION_COMP,        ///< 14
+    HCI_CMD_CONNECTION_END,         ///< 14
     HCI_CMD_SIMPLE_PAIR,            ///< 15
     HCI_CMD_SIMPLE_PAIR_END,        ///< 16
     HCI_CMD_EVENT_MASK,             ///< 17

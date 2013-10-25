@@ -37,11 +37,11 @@ typedef struct {
 typedef struct {
     int eventCode;
     unsigned char buf[DATA_PACKET_LENGTH];
-} recvHciCommandParam_t;
+} recvHciEventParam_t;
 
 
 extern sendParam_t sendHciCommandParam;
-extern recvHciCommandParam_t recvHciCommandParam;
+extern recvHciEventParam_t recvHciEventParam;
 extern sendParam_t sendAclDataParam;
 extern unsigned char recvAclBuf[DATA_PACKET_LENGTH];
 extern unsigned char recvHciBuf[DATA_PACKET_LENGTH];
