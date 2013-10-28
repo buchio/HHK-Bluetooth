@@ -100,48 +100,92 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
 
-/// \defgroup USB USBホスト処理
-/// @{
 
-///
-/// \defgroup USBVariables USBホスト共有変数
-/// @{
 
-/// @}
 
-/// @}
+typedef enum {
+    LED_off,
+    LED_on,
+    LED_blink0,
+    LED_blink1,
+    LED_blink2,
+    LED_blink3,
+    LED_blink3_1,
+    LED_blink3_2,
+    LED_END
+} ledState_t;
 
+static ledState_t ledState = LED_blink0;
+const struct ledStateCounts_t {
+    const unsigned int on;
+    const unsigned int off;
+    const ledState_t nextState;
+} ledStateCounts[] = {
+    {   0, 100, LED_off    },  // LED_off
+    { 100,   0, LED_on     },  // LED_on
+    { 100, 100, LED_blink0 },  // LED_blink0
+    {  10,  90, LED_blink1 },  // LED_blink1
+    {  90,  10, LED_blink2 },  // LED_blink2
+    {  10,  10, LED_blink3_1 },// LED_blink3
+    {  10,  10, LED_blink3_2 },// LED_blink3_1
+    {  10,  50, LED_blink3 },  // LED_blink3_2
+    { 0xffff, 0xffff } // LED_END
+};
+
+static void T1_LedTask( void )
+{
+    static ledState_t recentLedState = LED_END;
+    static volatile unsigned int ledCount = 0;
+
+    if( recentLedState != ledState ) {
+        ledCount = 0;
+        recentLedState = ledState;
+    }
+    
+    if( ledCount < ledStateCounts[ledState].on  && ledStateCounts[ledState].on != 0 ) {
+        LATB &= ~0b1000000000000000; //LED 点灯
+    } else if( ledStateCounts[ledState].off != 0 ) {
+        LATB |=  0b1000000000000000; //LED 消灯
+    }
+    ledCount += 1;
+
+    if( ledCount > ledStateCounts[ledState].on + ledStateCounts[ledState].off ) {
+        ledCount = 0;
+        ledState = ledStateCounts[ledState].nextState;
+    }
+}
+
+
+/**
+ * タイマ1割り込み
+ *
+ */
+void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
+{
+    T1_LedTask();
+    T1_Clear_Intr_Status_Bit;
+}
 
 
 /**
  * INT0割り込み
  * 
- * LEDを反転するだけ
+ * LEDStateを変更する
  * 
  */
 void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
 {
     printf( "{%d}", PORTBbits.RB7 );
+    if( ledState < (LED_END-1) ) {
+        ledState ++;
+    } else {
+        ledState = LED_off;
+    }
     
-	LATBbits.LATB15=!LATBbits.LATB15;
 	Int0_Clear_Intr_Status_Bit;
 }
 
-/**
- * タイマ1割り込み
- *
- * \note 仕様理解中
- * メッセージを表示してLEDを点滅するだけ
- * 
- */
-void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
-{
-    static volatile unsigned int count = 0;
-    // printf( "\r\n _T1Interrupt %u\r\n", count );
-    count += 1;
-    LATBbits.LATB15=!LATBbits.LATB15;
-    T1_Clear_Intr_Status_Bit;
-}
+
 
 /**
  * main関数
@@ -166,7 +210,7 @@ int main(void) {
     // 事前に、「USE_AND_OR」を定義することで回避できることを理解。やは
     // りPICの慣習らしい。
     ConfigIntTimer1(T1_INT_ON | T1_INT_PRIOR_1);
-    OpenTimer1(T1_ON | T1_PS_1_256, 0xf424);
+    OpenTimer1(T1_ON | T1_PS_1_256, 0x0271); // 10ms
     IEC0bits.T1IE = 1;
 #endif
 
@@ -185,8 +229,12 @@ int main(void) {
 #if 1
             c = Uart1GetCh();
             if(c != -1) {
-                if (c == 'A') LATB &= ~0b1000000000000000; //LED 点灯
-                if (c == 'B') LATB |= 0b1000000000000000; //LED 点灯
+                if (c == 'A') ledState = LED_off;
+                if (c == 'B') ledState = LED_on;
+                if (c == 'C') ledState = LED_blink0;
+                if (c == 'D') ledState = LED_blink1;
+                if (c == 'E') ledState = LED_blink2;
+                if (c == 'F') ledState = LED_blink3;
                 if ( c < ' ' ) {
                     printf("[0x%02X]", c);
                 } else {
@@ -216,7 +264,7 @@ int main(void) {
 
             Uart1Flush();
 
-#if 0
+#if 1
             if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
                 // printf( "Going into Idle.\n" );
                 Uart1Flush();
