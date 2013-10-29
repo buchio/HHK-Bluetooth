@@ -12,6 +12,9 @@
       </logicalFolder>
       <itemPath>../../Source/Modules/queue.h</itemPath>
       <itemPath>../../Source/Modules/uart.c</itemPath>
+      <itemPath>../../Source/Modules/led.c</itemPath>
+      <itemPath>../../Source/Modules/timer.c</itemPath>
+      <itemPath>../../Source/Modules/int0.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

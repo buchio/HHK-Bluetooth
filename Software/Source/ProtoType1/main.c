@@ -80,13 +80,10 @@
 
 #define USE_AND_OR
 #include <xc.h>
-#include <ports.h>
-#include <timer.h>
 #include <dpslp.h>
 
 #define DEBUG_OUTPUT
 #include "../modules.h"
-
 
 _CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF)
 _CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON)
@@ -96,185 +93,47 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "GenericTypeDefs.h"
 #include "../Microchip/HardwareProfile.h"
 #include "../Microchip/Include/timer.h"
-
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
 
 
-
-
-typedef enum {
-    LED_off,
-    LED_on,
-    LED_blink0,
-    LED_blink1,
-    LED_blink2,
-    LED_blink3,
-    LED_blink3_1,
-    LED_blink3_2,
-    LED_END
-} ledState_t;
-
-static ledState_t ledState = LED_blink0;
-const struct ledStateCounts_t {
-    const unsigned int on;
-    const unsigned int off;
-    const ledState_t nextState;
-} ledStateCounts[] = {
-    {   0, 100, LED_off    },  // LED_off
-    { 100,   0, LED_on     },  // LED_on
-    { 100, 100, LED_blink0 },  // LED_blink0
-    {  10,  90, LED_blink1 },  // LED_blink1
-    {  90,  10, LED_blink2 },  // LED_blink2
-    {  10,  10, LED_blink3_1 },// LED_blink3
-    {  10,  10, LED_blink3_2 },// LED_blink3_1
-    {  10,  50, LED_blink3 },  // LED_blink3_2
-    { 0xffff, 0xffff } // LED_END
-};
-
-static void T1_LedTask( void )
+///
+/// main関数
+///
+int main( void )
 {
-    static ledState_t recentLedState = LED_END;
-    static volatile unsigned int ledCount = 0;
-
-    if( recentLedState != ledState ) {
-        ledCount = 0;
-        recentLedState = ledState;
-    }
-    
-    if( ledCount < ledStateCounts[ledState].on  && ledStateCounts[ledState].on != 0 ) {
-        LATB &= ~0b1000000000000000; //LED 点灯
-    } else if( ledStateCounts[ledState].off != 0 ) {
-        LATB |=  0b1000000000000000; //LED 消灯
-    }
-    ledCount += 1;
-
-    if( ledCount > ledStateCounts[ledState].on + ledStateCounts[ledState].off ) {
-        ledCount = 0;
-        ledState = ledStateCounts[ledState].nextState;
-    }
-}
-
-
-/**
- * タイマ1割り込み
- *
- */
-void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
-{
-    T1_LedTask();
-    T1_Clear_Intr_Status_Bit;
-}
-
-
-/**
- * INT0割り込み
- * 
- * LEDStateを変更する
- * 
- */
-void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
-{
-    printf( "{%d}", PORTBbits.RB7 );
-    if( ledState < (LED_END-1) ) {
-        ledState ++;
-    } else {
-        ledState = LED_off;
-    }
-    
-	Int0_Clear_Intr_Status_Bit;
-}
-
-
-
-/**
- * main関数
- *
- */
-int main(void) {
     IsResetFromDeepSleep();
 
-    PLL_INITIALIZE();
-    TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
+    PllInit();
+    LedInit();
     Uart1Init();
-
+    TimerInit();
+    Int0Init();
+    
     BTInit();
 
-#if 1
-    // タイマ1の初期化複数のパラメータを結合する際に「&」を用いるように
-    // マクロが定義されているが、この場合、デフォルトがデバイスのデフォ
-    // ルトとは異なり、0xFFFFになっているので、デフォルト値に期待せず全
-    // てのビットを定義する必要がある。一般的なORルールではなく、ANDルー
-    // ルになっているのは謎。PICの慣習か？
-    //
-    // 事前に、「USE_AND_OR」を定義することで回避できることを理解。やは
-    // りPICの慣習らしい。
-    ConfigIntTimer1(T1_INT_ON | T1_INT_PRIOR_1);
-    OpenTimer1(T1_ON | T1_PS_1_256, 0x0271); // 10ms
-    IEC0bits.T1IE = 1;
-#endif
-
-#if 1
-	CNPU2=0x80;	//pin#16 pull-up CN23
-	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
-#endif
-
-    
     while( 1 ) {
-        static int c = 0;
-        static int num = 0;
-        
-        while( 1 ) {
-            
-#if 1
-            c = Uart1GetCh();
-            if(c != -1) {
-                if (c == 'A') ledState = LED_off;
-                if (c == 'B') ledState = LED_on;
-                if (c == 'C') ledState = LED_blink0;
-                if (c == 'D') ledState = LED_blink1;
-                if (c == 'E') ledState = LED_blink2;
-                if (c == 'F') ledState = LED_blink3;
-                if ( c < ' ' ) {
-                    printf("[0x%02X]", c);
-                } else {
-                    printf("[%c]", c);
-                }
+        int c = Uart1GetCh();
+        if( c != -1 ) {
+            if (c == 'A') SetLedState( LED_off );
+            if (c == 'B') SetLedState( LED_on );
+            if (c == 'C') SetLedState( LED_blink0 );
+            if (c == 'D') SetLedState( LED_blink1 );
+            if (c == 'E') SetLedState( LED_blink2 );
+            if (c == 'F') SetLedState( LED_blink3 );
+            if ( c < ' ' ) {
+                printf("[0x%02X]", c);
+            } else {
+                printf("[%c]", c);
             }
-#endif
-            num ++;
-
-                    
-#if 0
-            // 通信速度を越えて出力する場合にはFlushでキュー内の送信待
-            // ちをしないととキューが溢れる。暴走はしないが、文字抜けす
-            // るので表示がグチャグチャになる。
-            printf( "   Message Number %d\n", num );
-            Uart1Flush();
-#endif
-            
-#if 0
-            // もしくは以下のようにキューが空でないとメッセージを表示し
-            // ないようにしてもよい
-            if( Uart1SendQueueSize() == 0 ) {
-                printf( "   Message Number %d\n", num );
-            }
-#endif
-            BTTask();
-
-            Uart1Flush();
-
-#if 1
-            if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
-                // printf( "Going into Idle.\n" );
-                Uart1Flush();
-                Idle();
-            }
-#endif
-
-            DelayMs(1); // 1ms delay
-    
         }
+
+        BTTask();
+
+        if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
+            Idle();
+        }
+        DelayMs(1); // 1ms delay
     }
     return 0;
 }

@@ -35,6 +35,7 @@
 /// \defgroup Modules ソフトウェアモジュール
 /// @{
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup DEBUG Debug用モジュール
 /// @{
 
@@ -55,18 +56,48 @@
 
 /// @}
 
-
-
-/// \defgroup PLL PLL操作
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup LED LED用モジュール
 /// @{
-#define PLL_INITIALIZE() {                  \
-    unsigned int pll_startup_counter = 600; \
-    CLKDIVbits.PLLEN = 1;\
-    while( pll_startup_counter -- ) {\
-    } \
-}
+
+
+/// 
+/// LED点滅状態
+/// 
+typedef enum {
+    LED_off,       ///< 常時消灯
+    LED_on,        ///< 常時点灯
+    LED_blink0,    ///< ****----
+    LED_blink1,    ///< *---*---
+    LED_blink2,    ///< ***-***-
+    LED_blink3,    ///< *-*-*---
+    LED_STATE_END, ///< ユーザーが指定する状態はここまで
+    LED_blink3_1,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_blink3_2,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_ENUM_END   ///< enumの最後
+} ledState_t;
+
+void SetLedState( ledState_t state );
+void LedInit( void );
+void LedEvent_T1( void );
+void LedEvent_INT0( void );
+
+
 /// @}
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup PLL PLL操作
+/// @{
+#define PllInit() {                             \
+        unsigned int pll_startup_counter = 600; \
+        CLKDIVbits.PLLEN = 1;                   \
+        while( pll_startup_counter -- ) {       \
+        }                                       \
+    }
+/// @}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup Uart UART入出力モジュールAPI
 /// @{
 
@@ -81,6 +112,24 @@ int Uart1ReceiveQueueSize( void );
 
 /// @}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Timer TimerモジュールAPI
+/// @{
+
+void TimerInit( void );
+
+/// @}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Int0 Int0モジュールAPI
+/// @{
+
+void Int0Init( void );
+
+/// @}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup Bluetooth Bluetooth関連モジュール
 
 /// Bluetooth初期化
