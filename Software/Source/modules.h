@@ -55,6 +55,34 @@
 
 /// @}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup LED LED用モジュール
+/// @{
+
+
+/// 
+/// LED点滅状態
+/// 
+typedef enum {
+    LED_off,       ///< 常時消灯
+    LED_on,        ///< 常時点灯
+    LED_blink0,    ///< ****----
+    LED_blink1,    ///< *---*---
+    LED_blink2,    ///< ***-***-
+    LED_blink3,    ///< *-*-*---
+    LED_STATE_END, ///< ユーザーが指定する状態はここまで
+    LED_blink3_1,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_blink3_2,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_ENUM_END   ///< enumの最後
+} ledState_t;
+
+extern ledState_t ledState;
+void LedInit( void );
+void LedEvent_T1( void );
+void LedEvent_INT0( void );
+
+
+/// @}
 
 
 /// \defgroup PLL PLL操作
