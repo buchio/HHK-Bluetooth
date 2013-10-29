@@ -49,7 +49,7 @@
 
 #include "../Microchip/HardwareProfile.h"
 
-QUEUE_INIT(UART_TX, 9, unsigned char ); ///< 送信キュー サイズ：512バイト
+QUEUE_INIT(UART_TX,11, unsigned char ); ///< 送信キュー サイズ：2048バイト
 QUEUE_INIT(UART_RX, 7, unsigned char ); ///< 受信キュー サイズ：128バイト
 
 /// 

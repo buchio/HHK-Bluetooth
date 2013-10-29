@@ -59,12 +59,12 @@
 
 /// \defgroup PLL PLL操作
 /// @{
-#define PLL_INITIALIZE() {                  \
-    unsigned int pll_startup_counter = 600; \
-    CLKDIVbits.PLLEN = 1;\
-    while( pll_startup_counter -- ) {\
-    } \
-}
+#define PllInit() {                             \
+        unsigned int pll_startup_counter = 600; \
+        CLKDIVbits.PLLEN = 1;                   \
+        while( pll_startup_counter -- ) {       \
+        }                                       \
+    }
 /// @}
 
 /// \defgroup Uart UART入出力モジュールAPI

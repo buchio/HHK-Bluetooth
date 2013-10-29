@@ -101,18 +101,20 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Modules/Bluetooth/bluetooth.h"
 
 
-
-
+/// 
+/// LED点滅状態
+/// 
 typedef enum {
-    LED_off,
-    LED_on,
-    LED_blink0,
-    LED_blink1,
-    LED_blink2,
-    LED_blink3,
-    LED_blink3_1,
-    LED_blink3_2,
-    LED_END
+    LED_off,       ///< 常時消灯
+    LED_on,        ///< 常時点灯
+    LED_blink0,    ///< ****----
+    LED_blink1,    ///< *---*---
+    LED_blink2,    ///< ***-***-
+    LED_blink3,    ///< *-*-*---
+    LED_STATE_END, ///< ユーザーが指定する状態はここまで
+    LED_blink3_1,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_blink3_2,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_ENUM_END   ///< enumの最後
 } ledState_t;
 
 static ledState_t ledState = LED_blink0;
@@ -127,25 +129,29 @@ const struct ledStateCounts_t {
     {  10,  90, LED_blink1 },  // LED_blink1
     {  90,  10, LED_blink2 },  // LED_blink2
     {  10,  10, LED_blink3_1 },// LED_blink3
+    { 0xffff, 0xffff },        // LED_STATE_END
     {  10,  10, LED_blink3_2 },// LED_blink3_1
     {  10,  50, LED_blink3 },  // LED_blink3_2
-    { 0xffff, 0xffff } // LED_END
+    { 0xffff, 0xffff }         // LED_ENUM_END
 };
 
-static void T1_LedTask( void )
+static inline void LedEvent_T1( void )
 {
-    static ledState_t recentLedState = LED_END;
+    static ledState_t recentLedState = LED_ENUM_END;
     static volatile unsigned int ledCount = 0;
+    static unsigned int ledOn = 0;
 
     if( recentLedState != ledState ) {
         ledCount = 0;
         recentLedState = ledState;
     }
     
-    if( ledCount < ledStateCounts[ledState].on  && ledStateCounts[ledState].on != 0 ) {
+    if( ledCount < ledStateCounts[ledState].on && ledStateCounts[ledState].on != 0 && ledOn == 0 ) {
         LATB &= ~0b1000000000000000; //LED 点灯
-    } else if( ledStateCounts[ledState].off != 0 ) {
+        ledOn = 1;
+    } else if( ledStateCounts[ledState].off != 0 && ledOn == 1 ) {
         LATB |=  0b1000000000000000; //LED 消灯
+        ledOn = 0;
     }
     ledCount += 1;
 
@@ -162,7 +168,7 @@ static void T1_LedTask( void )
  */
 void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
 {
-    T1_LedTask();
+    LedEvent_T1();
     T1_Clear_Intr_Status_Bit;
 }
 
@@ -176,7 +182,7 @@ void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
 void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
 {
     printf( "{%d}", PORTBbits.RB7 );
-    if( ledState < (LED_END-1) ) {
+    if( ledState < (LED_STATE_END-1) ) {
         ledState ++;
     } else {
         ledState = LED_off;
@@ -185,96 +191,55 @@ void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
 	Int0_Clear_Intr_Status_Bit;
 }
 
-
-
 /**
  * main関数
  *
  */
-int main(void) {
+int main(void)
+{
     IsResetFromDeepSleep();
 
-    PLL_INITIALIZE();
+    PllInit();
     TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
     Uart1Init();
 
     BTInit();
 
-#if 1
-    // タイマ1の初期化複数のパラメータを結合する際に「&」を用いるように
-    // マクロが定義されているが、この場合、デフォルトがデバイスのデフォ
-    // ルトとは異なり、0xFFFFになっているので、デフォルト値に期待せず全
-    // てのビットを定義する必要がある。一般的なORルールではなく、ANDルー
-    // ルになっているのは謎。PICの慣習か？
-    //
-    // 事前に、「USE_AND_OR」を定義することで回避できることを理解。やは
-    // りPICの慣習らしい。
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Init Timer
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
     ConfigIntTimer1(T1_INT_ON | T1_INT_PRIOR_1);
     OpenTimer1(T1_ON | T1_PS_1_256, 0x0271); // 10ms
     IEC0bits.T1IE = 1;
-#endif
 
-#if 1
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Init INT0
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
 	CNPU2=0x80;	//pin#16 pull-up CN23
 	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
-#endif
-
     
     while( 1 ) {
-        static int c = 0;
-        static int num = 0;
-        
-        while( 1 ) {
-            
-#if 1
-            c = Uart1GetCh();
-            if(c != -1) {
-                if (c == 'A') ledState = LED_off;
-                if (c == 'B') ledState = LED_on;
-                if (c == 'C') ledState = LED_blink0;
-                if (c == 'D') ledState = LED_blink1;
-                if (c == 'E') ledState = LED_blink2;
-                if (c == 'F') ledState = LED_blink3;
-                if ( c < ' ' ) {
-                    printf("[0x%02X]", c);
-                } else {
-                    printf("[%c]", c);
-                }
+        int c = Uart1GetCh();
+        if(c != -1) {
+            if (c == 'A') ledState = LED_off;
+            if (c == 'B') ledState = LED_on;
+            if (c == 'C') ledState = LED_blink0;
+            if (c == 'D') ledState = LED_blink1;
+            if (c == 'E') ledState = LED_blink2;
+            if (c == 'F') ledState = LED_blink3;
+            if ( c < ' ' ) {
+                printf("[0x%02X]", c);
+            } else {
+                printf("[%c]", c);
             }
-#endif
-            num ++;
-
-                    
-#if 0
-            // 通信速度を越えて出力する場合にはFlushでキュー内の送信待
-            // ちをしないととキューが溢れる。暴走はしないが、文字抜けす
-            // るので表示がグチャグチャになる。
-            printf( "   Message Number %d\n", num );
-            Uart1Flush();
-#endif
-            
-#if 0
-            // もしくは以下のようにキューが空でないとメッセージを表示し
-            // ないようにしてもよい
-            if( Uart1SendQueueSize() == 0 ) {
-                printf( "   Message Number %d\n", num );
-            }
-#endif
-            BTTask();
-
-            Uart1Flush();
-
-#if 1
-            if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
-                // printf( "Going into Idle.\n" );
-                Uart1Flush();
-                Idle();
-            }
-#endif
-
-            DelayMs(1); // 1ms delay
-    
         }
+        BTTask();
+        //Uart1Flush();
+        if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
+            Uart1Flush();
+            Idle();
+        }
+        DelayMs(1); // 1ms delay
     }
     return 0;
 }
