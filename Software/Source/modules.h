@@ -35,6 +35,7 @@
 /// \defgroup Modules ソフトウェアモジュール
 /// @{
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup DEBUG Debug用モジュール
 /// @{
 
@@ -52,6 +53,16 @@
 #define DEBUG_PRINTF( ... ) {}
 #define DEBUG_DUMP( xName, xBuf, xSize ) {}
 #endif
+
+/// @}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Timer Timer用モジュール
+/// @{
+
+void TimerInit( void );
+void TimerAddCallback( void (*callback)( void ), int expireCount, int isOneShot );
+void TimerRemoveCallback( void (*callback)( void ) );
 
 /// @}
 
@@ -81,10 +92,10 @@ void LedInit( void );
 void LedEvent_T1( void );
 void LedEvent_INT0( void );
 
-
 /// @}
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup PLL PLL操作
 /// @{
 #define PllInit() {                             \
@@ -95,6 +106,7 @@ void LedEvent_INT0( void );
     }
 /// @}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup Uart UART入出力モジュールAPI
 /// @{
 
@@ -109,7 +121,9 @@ int Uart1ReceiveQueueSize( void );
 
 /// @}
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup Bluetooth Bluetooth関連モジュール
+/// @{
 
 /// Bluetooth初期化
 void BTInit( void );
@@ -117,6 +131,7 @@ void BTInit( void );
 /// Bluetoothタスク
 void BTTask( void );
 
+/// @}
 
 /// @}
 

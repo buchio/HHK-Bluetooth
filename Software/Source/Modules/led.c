@@ -29,6 +29,7 @@ const struct ledStateCounts_t {
 void LedInit( void )
 {
     TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
+    TimerAddCallback( LedEvent_T1, 10, 0 );
 }
 
 void LedEvent_T1( void )

@@ -88,10 +88,10 @@
 #include "../modules.h"
 
 
-_CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF)
-_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON)
-_CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS & WPEND_WPENDMEM)
-_CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_OFF)
+_CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF);
+_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON);
+_CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS & WPEND_WPENDMEM);
+_CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_OFF);
 
 #include "GenericTypeDefs.h"
 #include "../Microchip/HardwareProfile.h"
@@ -100,18 +100,9 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
 
-
-/**
- * タイマ1割り込み
- *
- */
-void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
-{
-    LedEvent_T1();
-    T1_Clear_Intr_Status_Bit;
-}
-
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Int0
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * INT0割り込み
  * 
@@ -139,17 +130,14 @@ int main(void)
     IsResetFromDeepSleep();
 
     PllInit();
-    LedInit();
+    TimerInit();
     Uart1Init();
+
+    LedInit();
+
     BTInit();
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Init Timer
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    ConfigIntTimer1(T1_INT_ON | T1_INT_PRIOR_1);
-    OpenTimer1(T1_ON | T1_PS_1_256, 0x0271); // 10ms
-    IEC0bits.T1IE = 1;
-
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Init INT0
     ////////////////////////////////////////////////////////////////////////////////////////////////////
