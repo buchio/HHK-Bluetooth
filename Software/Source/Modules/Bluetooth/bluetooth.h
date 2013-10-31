@@ -1,6 +1,10 @@
 #ifndef H_BLUETOOTH_H_131023082120_
 #define H_BLUETOOTH_H_131023082120_
 
+/// \ingroup Bluetooth
+/// \defgroup BluetoothCommunication
+/// @{
+
 ///
 /// Hci Sequence
 ///
@@ -95,16 +99,19 @@ typedef enum
     HCI_SEQUENCE_END                ///< 86
 } HCI_SEQUENCE;
 
-extern HCI_SEQUENCE hciSequence;
-extern unsigned char hidState;
-extern unsigned char src_cid[2];
-extern unsigned char dst_cid[2];
-extern unsigned char src_cid1[2];
-extern unsigned char dst_cid1[2];
+extern HCI_SEQUENCE hciSequence; ///< HCI通信シーケンス番号
+extern unsigned char hidState;   ///< HID状態
+extern unsigned char src_cid[2]; ///< HHK側のCID
+extern unsigned char dst_cid[2]; ///< PC側のCID
+extern unsigned char src_cid1[2];///< HHK側のCID (予備)
+extern unsigned char dst_cid1[2];///< PC側のCID (予備)
 
 void BluetoothInit( void );
 void BluetoothTask( void );
 
 void ManageHciSequence( void );
+
+
+/// @}
 
 #endif //H_BLUETOOTH_H_131023082120_

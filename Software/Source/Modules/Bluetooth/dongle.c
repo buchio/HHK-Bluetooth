@@ -23,18 +23,12 @@ void BTInit( void )
 
 }
 
-
 void BTTask( void )
 {
-    // Bluetooth task.
     BluetoothTask();
-    // Maintain USB Host State
     USBHostTasks();
-    // Maintain Demo Application State
     ManageBluetoothState();
-
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // 

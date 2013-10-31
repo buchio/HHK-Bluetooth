@@ -26,7 +26,6 @@
 #ifndef H_HCI_DEFS_H_131023040849_
 #define H_HCI_DEFS_H_131023040849_
 
-/// \ingroup Modules
 /// \ingroup Bluetooth
 /// \defgroup HostControllerInterface HCI関連の定義
 /// @{
