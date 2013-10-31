@@ -100,23 +100,6 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
 
-/**
- * INT0割り込み
- * 
- * LEDStateを変更する
- * 
- */
-void __attribute__((interrupt,no_auto_psv)) _INT0Interrupt(void)
-{
-    printf( "{%d}", PORTBbits.RB7 );
-    if( ledState < (LED_STATE_END-1) ) {
-        ledState ++;
-    } else {
-        ledState = LED_off;
-    }
-    
-	Int0_Clear_Intr_Status_Bit;
-}
 
 /**
  * main関数
@@ -128,19 +111,13 @@ int main(void)
 
     PllInit();
     TimerInit();
-    Uart1Init();
+    Int0Init();
 
+    Uart1Init();
     LedInit();
 
     BTInit();
 
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Init INT0
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-	CNPU2=0x80;	//pin#16 pull-up CN23
-	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
-    
     while( 1 ) {
         int c = Uart1GetCh();
         if(c != -1) {

@@ -67,6 +67,16 @@ void TimerRemoveCallback( void (*callback)( void ) );
 /// @}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Int0 Int0用モジュール
+/// @{
+
+void Int0Init( void );
+void Int0AddCallback( void (*callback)( void ) );
+void Int0RemoveCallback( void (*callback)( void ) );
+
+/// @}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup LED LED用モジュール
 /// @{
 
@@ -89,8 +99,6 @@ typedef enum {
 
 extern ledState_t ledState;
 void LedInit( void );
-void LedEvent_T1( void );
-void LedEvent_INT0( void );
 
 /// @}
 
@@ -121,6 +129,8 @@ int Uart1ReceiveQueueSize( void );
 
 /// @}
 
+/// @}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \defgroup Bluetooth Bluetooth関連モジュール
 /// @{
@@ -130,8 +140,6 @@ void BTInit( void );
 
 /// Bluetoothタスク
 void BTTask( void );
-
-/// @}
 
 /// @}
 

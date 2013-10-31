@@ -26,11 +26,6 @@ const struct ledStateCounts_t {
     { 0xffff, 0xffff }         // LED_ENUM_END
 };
 
-void LedInit( void )
-{
-    TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
-    TimerAddCallback( LedEvent_T1, 10, 0 );
-}
 
 void LedEvent_T1( void )
 {
@@ -56,6 +51,23 @@ void LedEvent_T1( void )
         ledCount = 0;
         ledState = ledStateCounts[ledState].nextState;
     }
+}
+
+void LedEvent_INT0( void )
+{
+    printf( "{%d}", PORTBbits.RB7 );
+    if( ledState < (LED_STATE_END-1) ) {
+        ledState ++;
+    } else {
+        ledState = LED_off;
+    }
+}
+
+void LedInit( void )
+{
+    TRISB = 0b0111111111111111;// PORTB bit6 OUTPUT for LED
+    TimerAddCallback( LedEvent_T1, 10, 0 );
+    Int0AddCallback( LedEvent_INT0 );
 }
 
 

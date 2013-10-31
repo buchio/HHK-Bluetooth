@@ -184,6 +184,8 @@ int Uart1Write(char *dat, int szbyte)
 #define STDOUT  1
 #define STDERR  2
 
+int write(int handle, void * buffer, unsigned int len) __attribute__((__weak__, __section__(".libc"))) ;
+
 /// 
 /// スタンダードIOを利用するためのwrite置き換え
 /// 
@@ -193,7 +195,7 @@ int Uart1Write(char *dat, int szbyte)
 /// 
 /// weakシンボルを用いてwriteを置き換え、printf, puts等を利用できるようにします。
 /// 
-int __attribute__((__weak__, __section__(".libc"))) write(int handle, void * buffer, unsigned int len)
+int write(int handle, void * buffer, unsigned int len)
 {
     switch (handle) {
         case STDOUT:

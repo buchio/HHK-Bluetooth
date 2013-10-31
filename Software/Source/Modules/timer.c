@@ -59,11 +59,14 @@ void TimerRemoveCallback( void (*callback)( void ) )
     }
 }
 
-/**
- * タイマ1割り込み
- *
- */
-void __attribute__ ((interrupt,no_auto_psv)) _T1Interrupt (void)
+void _T1Interrupt (void) __attribute__ ((interrupt,no_auto_psv));
+
+
+/// \ingroup Timer
+///
+/// タイマ1割り込み
+/// 
+void _T1Interrupt ( void )
 {
     int i;
     for( i = 0; i < MAX_TIMER_CALLBACK; i++ ) {

@@ -233,6 +233,7 @@ void ManageBluetoothState ( void )
 }
 
 
+/// \ingroup Bluetooth
 /// \defgroup USBSupportFunctions usb_host.cから呼ばれるサポート関数
 /// @{
 

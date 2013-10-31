@@ -65,7 +65,7 @@
  * \param xSize    キューサイズ。実際のサイズは2のxSize乗となる。
  * \param xType    キューに格納する値の型
  *
- * \ref xType で指定した型の配列を要素数(1<< xSize)で宣言し、リードポイ
+ * xType で指定した型の配列を要素数(1<< xSize)で宣言し、リードポイ
  * ンタとライトポインタを定義します。全ての要素をstaticで宣言するため、
  * 宣言したスコープ内でしか利用できません。スコープ外からのアクセスを行
  * いたい場合には適宜アクセス関数を定義することで対応してください。
@@ -82,7 +82,7 @@
  * 値をキューに格納する
  *
  * \param xName    キューの名前
- * \param xval     格納するデータ
+ * \param xVal     格納するデータ
  *
  */
 #define QUEUE_IN(xName, xVal) \
@@ -93,7 +93,7 @@
  * キューから値を取り出す
  *
  * \param xName    キューの名前
- * \param xval     取り出したデータを格納する変数
+ * \param xVal     取り出したデータを格納する変数
  *
  */
 #define QUEUE_OUT(xName, xVal) \

@@ -2,7 +2,7 @@
 #define H_BLUETOOTH_H_131023082120_
 
 /// \ingroup Bluetooth
-/// \defgroup BluetoothCommunication
+/// \defgroup BluetoothSequence Bluetooth接続シーケンス
 /// @{
 
 ///
