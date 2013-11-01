@@ -98,6 +98,7 @@ typedef enum {
 } ledState_t;
 
 extern ledState_t ledState;
+void LedStateChange( ledState_t state; );
 void LedInit( void );
 
 /// @}
