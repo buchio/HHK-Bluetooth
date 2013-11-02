@@ -24,15 +24,14 @@
  *
  */
 
-#define DEBUG_OUTPUT
-#include "../../modules.h"
-#include "dongle.h"
-#include "bluetooth.h"
+#include "../../debug.h"
+#include "../bluetooth.h"
+#include "../hcisequence.h"
 
-#include "../../Microchip/HardwareProfile.h"
-#include "../../Microchip/Include/USB/usb_config.h"
-#include "../../Microchip/Include/USB/usb.h"
-#include "../../Microchip/Include/USB/usb_host_generic.h"
+#include "../../../Microchip/HardwareProfile.h"
+#include "../../../Microchip/Include/USB/usb_config.h"
+#include "../../../Microchip/Include/USB/usb.h"
+#include "../../../Microchip/Include/USB/usb_host_generic.h"
 
 void BTInit( void )
 {

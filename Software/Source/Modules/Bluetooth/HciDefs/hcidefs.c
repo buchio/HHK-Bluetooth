@@ -24,7 +24,7 @@
  *
  */
 
-#include "hci_defs.h"
+#include "../hcidefs.h"
 
 static const char * const hciErrorCode[] = {
     "Success",                                                  // 0x00
@@ -118,7 +118,7 @@ int main( int argc, char **argv)
 
 /*
  * Local variables:
- *  compile-command: "gcc -Wall -g  -I . -D__RUN_MODULE_TEST__ hci_defs.c -o hci_defs && ./hci_defs"
+ *  compile-command: "gcc -Wall -g  -I . -D__RUN_MODULE_TEST__ hcidefs.c -o hcidefs && ./hcidefs"
  *  c-indent-level: 4
  *  c-basic-offset: 4
  *  tab-width: 8

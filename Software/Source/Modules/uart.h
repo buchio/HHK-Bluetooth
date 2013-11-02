@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,22 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_UART_H_131103070420_
+#define H_UART_H_131103070420_
 
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Uart UART入出力モジュールAPI
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
+void Uart1Init();
+void Uart1Putc( const char c );
+void Uart1Puts( const char *str );
+void Uart1Flush( void );
+int Uart1Write( char *dat, int szbyte );
+int Uart1GetCh( void );
+int Uart1SendQueueSize( void );
+int Uart1ReceiveQueueSize( void );
 
-#endif	/* COMMON_H */
+/// @}
 
+#endif // H_UART_H_131103070420_

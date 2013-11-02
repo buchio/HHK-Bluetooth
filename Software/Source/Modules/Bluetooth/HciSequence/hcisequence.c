@@ -31,12 +31,11 @@
 #include <xc.h>
 #include <ports.h>
 
-#define DEBUG_OUTPUT
-#include "../../modules.h"
-#include "dongle.h"
-#include "bluetooth.h"
+#include "../../debug.h"
+#include "../bluetooth.h"
+#include "../hcisequence.h"
 
-#include "../../Microchip/Include/DEE_Emulation_16-bit.h"
+#include "../../../Microchip/Include/DEE_Emulation_16-bit.h"
 
 HCI_SEQUENCE hciSequence;         ///< Current sequence position of HCI connection.
 unsigned char hidState = 0;       ///< HID接続状態

@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,20 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_BLUETOOTH_H_131103070341_
+#define H_BLUETOOTH_H_131103070341_
 
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Bluetooth Bluetooth関連モジュール
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
+/// Bluetooth初期化
+void BTInit( void );
 
-#endif	/* COMMON_H */
+/// Bluetoothタスク
+void BTTask( void );
+
+/// @}
+
+#endif // H_BLUETOOTH_H_131103070341_
 

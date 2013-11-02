@@ -28,8 +28,7 @@
 #include <xc.h>
 #include <ports.h>
 
-#define DEBUG_OUTPUT
-#include "../modules.h"
+#include "../int0.h"
 
 #define MAX_INT0_CALLBACK (10)
     

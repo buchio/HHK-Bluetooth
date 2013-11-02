@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,17 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_TIMER_H_131103070415_
+#define H_TIMER_H_131103070415_
 
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Timer Timerコールバック管理
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
+void TimerInit( void );
+void TimerAddCallback( void (*callback)( void ), int expireCount, int isOneShot );
+void TimerRemoveCallback( void (*callback)( void ) );
 
-#endif	/* COMMON_H */
+/// @}
 
+#endif // H_TIMER_H_131103070415_

@@ -29,7 +29,7 @@
 #include <ports.h>
 #include <timer.h>
 
-#include "../modules.h"
+#include "../timer.h"
 
 #define MAX_TIMER_CALLBACK (10)
     

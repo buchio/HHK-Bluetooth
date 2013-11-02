@@ -30,8 +30,9 @@
 #include <xc.h>
 #include <ports.h>
 
-#define DEBUG_OUTPUT
-#include "../modules.h"
+#include "../timer.h"
+#include "../int0.h"
+#include "../led.h"
 
 ledState_t ledState = LED_blink0;
 

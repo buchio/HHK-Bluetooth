@@ -3,18 +3,24 @@
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <logicalFolder name="Modules" displayName="Modules" projectFiles="true">
       <logicalFolder name="Bluetooth" displayName="Bluetooth" projectFiles="true">
-        <itemPath>../../Source/Modules/Bluetooth/bluetooth.c</itemPath>
+        <itemPath>../../Source/Modules/Bluetooth/Bluetooth/bluetooth.c</itemPath>
+        <itemPath>../../Source/Modules/Bluetooth/HciDefs/hcidefs.c</itemPath>
+        <itemPath>../../Source/Modules/Bluetooth/HciSequence/hcisequence.c</itemPath>
         <itemPath>../../Source/Modules/Bluetooth/bluetooth.h</itemPath>
-        <itemPath>../../Source/Modules/Bluetooth/dongle.c</itemPath>
-        <itemPath>../../Source/Modules/Bluetooth/dongle.h</itemPath>
-        <itemPath>../../Source/Modules/Bluetooth/hci_defs.c</itemPath>
-        <itemPath>../../Source/Modules/Bluetooth/hci_defs.h</itemPath>
+        <itemPath>../../Source/Modules/Bluetooth/hcidefs.h</itemPath>
+        <itemPath>../../Source/Modules/Bluetooth/hcisequence.h</itemPath>
       </logicalFolder>
+      <itemPath>../../Source/Modules/Int0/int0.c</itemPath>
+      <itemPath>../../Source/Modules/Led/led.c</itemPath>
+      <itemPath>../../Source/Modules/Timer/timer.c</itemPath>
+      <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
+      <itemPath>../../Source/Modules/bluetooth.h</itemPath>
+      <itemPath>../../Source/Modules/int0.h</itemPath>
+      <itemPath>../../Source/Modules/led.h</itemPath>
+      <itemPath>../../Source/Modules/modules.c</itemPath>
       <itemPath>../../Source/Modules/queue.h</itemPath>
-      <itemPath>../../Source/Modules/uart.c</itemPath>
-      <itemPath>../../Source/Modules/led.c</itemPath>
-      <itemPath>../../Source/Modules/timer.c</itemPath>
-      <itemPath>../../Source/Modules/int0.c</itemPath>
+      <itemPath>../../Source/Modules/timer.h</itemPath>
+      <itemPath>../../Source/Modules/uart.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

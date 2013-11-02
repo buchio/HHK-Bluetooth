@@ -76,11 +76,7 @@
 
 #define USE_AND_OR
 #include <xc.h>
-#include <ports.h>
-#include <timer.h>
-#include <dpslp.h>
 
-#define DEBUG_OUTPUT
 #include "../modules.h"
 
 
@@ -93,41 +89,6 @@ _CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS &
 _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF &
          DSWDTEN_OFF);
 
-#include "GenericTypeDefs.h"
-#include "../Microchip/HardwareProfile.h"
-#include "../Microchip/Include/timer.h"
-
-#include "../Modules/Bluetooth/dongle.h"
-#include "../Modules/Bluetooth/bluetooth.h"
-
-void MainLoop( void )
-{
-    BTTask();
-    DelayMs(1); // 1ms delay
-
-    int c = Uart1GetCh();
-
-    if( c != -1 ) {
-        if ( c == 'A' ) LedStateChange( LED_off );
-        if ( c == 'B' ) LedStateChange( LED_on );
-        if ( c == 'C' ) LedStateChange( LED_blink0 );
-        if ( c == 'D' ) LedStateChange( LED_blink1 );
-        if ( c == 'E' ) LedStateChange( LED_blink2 );
-        if ( c == 'F' ) LedStateChange( LED_blink3 );
-        if ( c == 'G' ) GotoDeepSleep();
-            
-        if ( c < ' ' ) {
-            printf("[0x%02X]", c);
-        } else {
-            printf("[%c]", c);
-        }
-    }
-
-    if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
-        Uart1Flush();
-        Idle();
-    }
-}
 
 /**
  * main関数
@@ -135,23 +96,10 @@ void MainLoop( void )
  */
 int main(void)
 {
-
-    PllInit();
-    TimerInit();
-    Int0Init();
-
-    Uart1Init();
-    LedInit();
-
-    if( IsResetFromDeepSleep() ) {
-        printf( "Reset From Deep Sleep\r\n" );
-    }
+    ModulesInit();
     
-    BTInit();
-
-    LedStateChange( LED_blink0 );
     while( 1 ) {
-        MainLoop();
+        ModulesMainloop();
     }
     return 0;
 }

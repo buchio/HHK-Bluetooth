@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,30 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
-
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup DEBUG Debug出力
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
+#ifndef H_DEBUG_H_131103071917_
+#define H_DEBUG_H_131103071917_
 
-#endif	/* COMMON_H */
+#define DEBUG_OUTPUT
+#ifdef DEBUG_OUTPUT
+#define DEBUG_PRINTF( ... ) printf( __VA_ARGS__ )
+#define DEBUG_DUMP( xName, xBuf, xSize ) {              \
+        int i;                                          \
+        printf( xName );                                \
+        for( i = 0; i < xSize; i++ ) {                  \
+            printf( " %02X", *( (BYTE*)xBuf + i ) );    \
+        }                                               \
+        printf( "\r\n" );                               \
+    }
+#else
+#define DEBUG_PRINTF( ... ) {}
+#define DEBUG_DUMP( xName, xBuf, xSize ) {}
+#endif
 
+/// @}
+
+
+#endif // H_DEBUG_H_131103071917_

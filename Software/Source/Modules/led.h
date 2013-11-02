@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,35 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_LED_H_131103070409_
+#define H_LED_H_131103070409_
 
-#ifndef COMMON_H
-#define	COMMON_H
 
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup LED LED点滅制御
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
 
-#endif	/* COMMON_H */
+/// 
+/// LED点滅状態
+/// 
+typedef enum {
+    LED_off,       ///< 常時消灯
+    LED_on,        ///< 常時点灯
+    LED_blink0,    ///< ****----
+    LED_blink1,    ///< *---*---
+    LED_blink2,    ///< ***-***-
+    LED_blink3,    ///< *-*-*---
+    LED_STATE_END, ///< ユーザーが指定する状態はここまで
+    LED_blink3_1,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_blink3_2,  ///< 複雑な点滅を実現するためのサブ状態
+    LED_ENUM_END   ///< enumの最後
+} ledState_t;
 
+extern ledState_t ledState;
+void LedStateChange( ledState_t state; );
+void LedInit( void );
+
+/// @}
+
+#endif // H_LED_H_131103070409_

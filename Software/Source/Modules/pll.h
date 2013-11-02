@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,20 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_PLL_H_131103072016_
+#define H_PLL_H_131103072016_
 
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \ingroup Modules
+/// \defgroup PLL PLL操作
 /// @{
+#define PllInit() {                             \
+        unsigned int pll_startup_counter = 600; \
+        CLKDIVbits.PLLEN = 1;                   \
+        while( pll_startup_counter -- ) {       \
+        }                                       \
+    }
+/// @}
 
-void ModulesInit( void );
-void ModulesMainloop( void );
-
-#endif	/* COMMON_H */
+#endif // H_PLL_H_131103072016_
 

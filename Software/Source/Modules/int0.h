@@ -1,5 +1,6 @@
+// -*- coding:utf-8 -*-
 /*
- *  Copyright (c) 2013  Yukio Obuchi
+ *  Copyright (c) 2013 Yukio Obuchi
  *
  *  Permission is hereby granted, free of charge, to any person
  *  obtaining a copy of this software and associated documentation files
@@ -23,20 +24,17 @@
  *
  */
 
-/**
- * \file
- * \author Yukio Obuchi 
- * \date 2013/09/24, 13:49
- */
+#ifndef H_INT0_H_131103070401_
+#define H_INT0_H_131103070401_
 
-#ifndef COMMON_H
-#define	COMMON_H
-
-/// \defgroup Modules ソフトウェアモジュール
+////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \defgroup Int0 Int0コールバック管理
 /// @{
 
-void ModulesInit( void );
-void ModulesMainloop( void );
+void Int0Init( void );
+void Int0AddCallback( void (*callback)( void ) );
+void Int0RemoveCallback( void (*callback)( void ) );
 
-#endif	/* COMMON_H */
+/// @}
 
+#endif // H_INT0_H_131103070401_

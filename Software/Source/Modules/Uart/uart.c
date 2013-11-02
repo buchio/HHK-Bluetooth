@@ -31,7 +31,8 @@
  * Uart1送受信モジュール
  * 
  * 以下の要件を満すため、Microchip社提供のものを利用せず、スクラッチで記述しています。
- * \li デバッグ用の通信に特化するため、CPU負荷を小さくすることを最優先としています。例えば、キュー溢れなどに対しては単にデータを捨ててしまいます。
+ * \li デバッグ用の通信に特化するため、CPU負荷を小さくすることを最優先としています。
+ *     例えば、キュー溢れなどに対しては単にデータを捨ててしまいます。
  * \li 送信時はできるだけ特殊なAPIを利用せず、printfやputcなどをそのまま利用できるようにしています。
  * \li 逆に、受信は完全にこのシステムに特化し、専用APIでのアクセスのみを想定しています。
  * 
@@ -44,11 +45,11 @@
 
 #include <stdint.h>
 
-#include "../modules.h"
+#include "../uart.h"
 
-#include "queue.h"
+#include "../queue.h"
 
-#include "../Microchip/HardwareProfile.h"
+#include "../../Microchip/HardwareProfile.h"
 
 QUEUE_INIT(UART_TX,11, unsigned char ); ///< 送信キュー サイズ：2048バイト
 QUEUE_INIT(UART_RX, 7, unsigned char ); ///< 受信キュー サイズ：128バイト
