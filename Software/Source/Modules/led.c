@@ -52,7 +52,6 @@ const struct ledStateCounts_t {
     { 0xffff, 0xffff }         // LED_ENUM_END
 };
 
-
 void LedEvent_T1( void )
 {
     static ledState_t recentLedState = LED_ENUM_END;
@@ -87,6 +86,11 @@ void LedEvent_INT0( void )
     } else {
         ledState = LED_off;
     }
+}
+
+void LedStateChange( ledState_t state )
+{
+    ledState = state;
 }
 
 void LedInit( void )

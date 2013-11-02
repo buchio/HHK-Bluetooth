@@ -31,11 +31,6 @@
  *
  * エントリモジュール
  *  
- * 現在はフィジビリティスタディを行っているので、仕様理解中の処理をここ
- * に記述しているが、将来的には処理は全て modules.h に定義されるモジュー
- * ルに記述し、このモジュールは、初期化後にメインループを起動するだけの
- * 役割とする予定
- *
  * 
  */
 
@@ -89,10 +84,14 @@
 #include "../modules.h"
 
 
-_CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF & GCP_OFF & JTAGEN_OFF);
-_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD & FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON);
-_CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS & WPEND_WPENDMEM);
-_CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_OFF);
+_CONFIG1(WDTPS_PS1 & FWPSA_PR32 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & GWRP_OFF &
+         GCP_OFF & JTAGEN_OFF);
+_CONFIG2(POSCMOD_HS & I2C1SEL_PRI & IOL1WAY_OFF & OSCIOFNC_ON & FCKSM_CSDCMD &
+         FNOSC_PRIPLL & PLL96MHZ_ON & PLLDIV_NODIV & IESO_ON);
+_CONFIG3(WPFP_WPFP0 & SOSCSEL_IO & WUTSEL_LEG & WPDIS_WPDIS & WPCFG_WPCFGDIS &
+         WPEND_WPENDMEM);
+_CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF &
+         DSWDTEN_OFF);
 
 #include "GenericTypeDefs.h"
 #include "../Microchip/HardwareProfile.h"
@@ -100,7 +99,6 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF & DSWDTEN_
 
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
-
 
 /**
  * main関数
@@ -119,28 +117,45 @@ int main(void)
 
     BTInit();
 
+    LedStateChange( LED_blink0 );
     while( 1 ) {
+        BTTask();
+        DelayMs(1); // 1ms delay
+
         int c = Uart1GetCh();
-        if(c != -1) {
-            if (c == 'A') ledState = LED_off;
-            if (c == 'B') ledState = LED_on;
-            if (c == 'C') ledState = LED_blink0;
-            if (c == 'D') ledState = LED_blink1;
-            if (c == 'E') ledState = LED_blink2;
-            if (c == 'F') ledState = LED_blink3;
+
+        // ここの記述次第では起動時に暴走してしまう。
+        // ネストの深さが関係している？
+        if( c == 'A' )        {
+            printf("LED_off\r\n");
+            LedStateChange( LED_off );
+        } else if( c == 'B' ) {
+            printf("LED_on\r\n");
+            LedStateChange( LED_on );
+        } else if( c == 'C' ) {
+            printf("LED_blink0\r\n");
+            LedStateChange( LED_blink0 );
+        } else if( c == 'D' ) {
+            printf("LED_blink1\r\n");
+            LedStateChange( LED_blink1 );
+        } else if( c == 'E' ) {
+            printf("LED_blink2\r\n");
+            LedStateChange( LED_blink2 );
+        } else if( c == 'F' ) {
+            printf("LED_blink3\r\n");
+            LedStateChange( LED_blink3 );
+        } else if( c != -1 ) {
             if ( c < ' ' ) {
                 printf("[0x%02X]", c);
             } else {
                 printf("[%c]", c);
             }
         }
-        BTTask();
-        //Uart1Flush();
+
         if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
             Uart1Flush();
             Idle();
         }
-        DelayMs(1); // 1ms delay
     }
     return 0;
 }

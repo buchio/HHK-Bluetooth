@@ -59,7 +59,8 @@ void TimerInit( void )
 
 }
 
-void TimerAddCallback( void (*callback)( void ), int expireCount, int isOneShot )
+void TimerAddCallback( void (*callback)( void ),
+                       int expireCount, int isOneShot )
 {
     int i;
     for( i = 0; i < MAX_TIMER_CALLBACK; i++ ) {
@@ -98,7 +99,8 @@ void _T1Interrupt ( void )
     for( i = 0; i < MAX_TIMER_CALLBACK; i++ ) {
         if( timerCallbacks[i].callback != NULL ) {
             timerCallbacks[i].timerCount ++;
-            if( timerCallbacks[i].timerCount > timerCallbacks[i].expireCount ) {
+            if( timerCallbacks[i].timerCount >
+                timerCallbacks[i].expireCount ) {
                 (timerCallbacks[i].callback)();
                 timerCallbacks[i].timerCount = 0;
                 if( timerCallbacks[i].isOneShot ) {
