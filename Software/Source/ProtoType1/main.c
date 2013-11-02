@@ -100,13 +100,41 @@ _CONFIG4(DSWDTPS_DSWDTPS3 & DSWDTOSC_LPRC & RTCOSC_SOSC & DSBOREN_OFF &
 #include "../Modules/Bluetooth/dongle.h"
 #include "../Modules/Bluetooth/bluetooth.h"
 
+void MainLoop( void )
+{
+    BTTask();
+    DelayMs(1); // 1ms delay
+
+    int c = Uart1GetCh();
+
+    if( c != -1 ) {
+        if ( c == 'A' ) LedStateChange( LED_off );
+        if ( c == 'B' ) LedStateChange( LED_on );
+        if ( c == 'C' ) LedStateChange( LED_blink0 );
+        if ( c == 'D' ) LedStateChange( LED_blink1 );
+        if ( c == 'E' ) LedStateChange( LED_blink2 );
+        if ( c == 'F' ) LedStateChange( LED_blink3 );
+        if ( c == 'G' ) GotoDeepSleep();
+            
+        if ( c < ' ' ) {
+            printf("[0x%02X]", c);
+        } else {
+            printf("[%c]", c);
+        }
+    }
+
+    if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
+        Uart1Flush();
+        Idle();
+    }
+}
+
 /**
  * main関数
  *
  */
 int main(void)
 {
-    IsResetFromDeepSleep();
 
     PllInit();
     TimerInit();
@@ -115,47 +143,15 @@ int main(void)
     Uart1Init();
     LedInit();
 
+    if( IsResetFromDeepSleep() ) {
+        printf( "Reset From Deep Sleep\r\n" );
+    }
+    
     BTInit();
 
     LedStateChange( LED_blink0 );
     while( 1 ) {
-        BTTask();
-        DelayMs(1); // 1ms delay
-
-        int c = Uart1GetCh();
-
-        // ここの記述次第では起動時に暴走してしまう。
-        // ネストの深さが関係している？
-        if( c == 'A' )        {
-            printf("LED_off\r\n");
-            LedStateChange( LED_off );
-        } else if( c == 'B' ) {
-            printf("LED_on\r\n");
-            LedStateChange( LED_on );
-        } else if( c == 'C' ) {
-            printf("LED_blink0\r\n");
-            LedStateChange( LED_blink0 );
-        } else if( c == 'D' ) {
-            printf("LED_blink1\r\n");
-            LedStateChange( LED_blink1 );
-        } else if( c == 'E' ) {
-            printf("LED_blink2\r\n");
-            LedStateChange( LED_blink2 );
-        } else if( c == 'F' ) {
-            printf("LED_blink3\r\n");
-            LedStateChange( LED_blink3 );
-        } else if( c != -1 ) {
-            if ( c < ' ' ) {
-                printf("[0x%02X]", c);
-            } else {
-                printf("[%c]", c);
-            }
-        }
-
-        if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
-            Uart1Flush();
-            Idle();
-        }
+        MainLoop();
     }
     return 0;
 }

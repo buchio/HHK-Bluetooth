@@ -31,8 +31,6 @@
 
 #include "../modules.h"
 
-#include "../Modules/queue.h"
-
 #define MAX_TIMER_CALLBACK (10)
     
 struct timerCallback {

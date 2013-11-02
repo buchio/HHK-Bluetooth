@@ -44,7 +44,8 @@ void Int0Init( void )
         int0Callbacks[i].callback = NULL;
     }
 	CNPU2=0x80;	//pin#16 pull-up CN23
-	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_1); /*Enable inerrupt*/
+    CloseINT0();
+	ConfigINT0(INT_ENABLE | FALLING_EDGE_INT | INT_PRI_7);
 }
 
 void Int0AddCallback( void (*callback)( void ) )
