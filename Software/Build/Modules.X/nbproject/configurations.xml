@@ -15,9 +15,11 @@
       <itemPath>../../Source/Modules/Timer/timer.c</itemPath>
       <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
       <itemPath>../../Source/Modules/bluetooth.h</itemPath>
+      <itemPath>../../Source/Modules/debug.h</itemPath>
       <itemPath>../../Source/Modules/int0.h</itemPath>
       <itemPath>../../Source/Modules/led.h</itemPath>
       <itemPath>../../Source/Modules/modules.c</itemPath>
+      <itemPath>../../Source/Modules/pll.h</itemPath>
       <itemPath>../../Source/Modules/queue.h</itemPath>
       <itemPath>../../Source/Modules/timer.h</itemPath>
       <itemPath>../../Source/Modules/uart.h</itemPath>
