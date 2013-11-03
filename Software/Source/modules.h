@@ -38,5 +38,7 @@
 void ModulesInit( void );
 void ModulesMainloop( void );
 
+/// @}
+
 #endif	/* COMMON_H */
 
