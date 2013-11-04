@@ -40,6 +40,7 @@
 #include "timer.h"
 #include "int0.h"
 #include "uart.h"
+#include "shell.h"
 #include "led.h"
 
 #include "bluetooth.h"
@@ -47,8 +48,10 @@
 void ModulesInit( void )
 {
     PllInit();
+
     TimerInit();
     Int0Init();
+    ShellInit();
 
     Uart1Init();
     LedInit();
@@ -66,29 +69,7 @@ void ModulesMainloop( void )
 {
     BTTask();
     DelayMs(1); // 1ms delay
-
-    int c = Uart1GetCh();
-
-    if( c != -1 ) {
-        if ( c == 'A' ) LedStateChange( LED_off );
-        if ( c == 'B' ) LedStateChange( LED_on );
-        if ( c == 'C' ) LedStateChange( LED_blink0 );
-        if ( c == 'D' ) LedStateChange( LED_blink1 );
-        if ( c == 'E' ) LedStateChange( LED_blink2 );
-        if ( c == 'F' ) LedStateChange( LED_blink3 );
-        if ( c == 'G' ) GotoDeepSleep();
-            
-        if ( c < ' ' ) {
-            printf("[0x%02X]", c);
-        } else {
-            printf("[%c]", c);
-        }
-    }
-
-    if( Uart1SendQueueSize() == 0 && Uart1ReceiveQueueSize() == 0 ) {
-        Uart1Flush();
-        Idle();
-    }
+    Shell();
 }
 
 

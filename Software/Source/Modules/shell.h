@@ -24,22 +24,16 @@
  *
  */
 
-#ifndef H_UART_H_131103070420_
-#define H_UART_H_131103070420_
+#ifndef H_SHELL_H_131104123828_
+#define H_SHELL_H_131104123828_
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \defgroup Uart UART入出力
+/// \defgroup Shell 対話型シェル
 /// @{
-
-void Uart1Init();
-void Uart1Putc( const char c );
-void Uart1Puts( const char *str );
-void Uart1Flush( void );
-int Uart1Write( char *dat, int szbyte );
-int Uart1GetCh( void );
-int Uart1SendQueueSize( void );
-int Uart1ReceiveQueueSize( void );
-
+void ShellInit( void );
+void ShellAddCommand( const char *name, int (*command)( int, char** ) );
+void Shell( void );
 /// @}
 
-#endif // H_UART_H_131103070420_
+#endif // H_SHELL_H_131104123828_
+

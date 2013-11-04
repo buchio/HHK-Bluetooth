@@ -43,10 +43,7 @@
 #include <xc.h>
 #include <uart.h>
 
-#include <stdint.h>
-
 #include "../uart.h"
-
 #include "../queue.h"
 
 #include "../../Microchip/HardwareProfile.h"

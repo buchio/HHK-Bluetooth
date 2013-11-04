@@ -10,10 +10,21 @@
         <itemPath>../../Source/Modules/Bluetooth/hcidefs.h</itemPath>
         <itemPath>../../Source/Modules/Bluetooth/hcisequence.h</itemPath>
       </logicalFolder>
-      <itemPath>../../Source/Modules/Int0/int0.c</itemPath>
-      <itemPath>../../Source/Modules/Led/led.c</itemPath>
-      <itemPath>../../Source/Modules/Timer/timer.c</itemPath>
-      <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
+      <logicalFolder name="Int0" displayName="Int0" projectFiles="true">
+        <itemPath>../../Source/Modules/Int0/int0.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Led" displayName="Led" projectFiles="true">
+        <itemPath>../../Source/Modules/Led/led.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Shell" displayName="Shell" projectFiles="true">
+        <itemPath>../../Source/Modules/Shell/shell.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Timer" displayName="Timer" projectFiles="true">
+        <itemPath>../../Source/Modules/Timer/timer.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="Uart" displayName="Uart" projectFiles="true">
+        <itemPath>../../Source/Modules/Uart/uart.c</itemPath>
+      </logicalFolder>
       <itemPath>../../Source/Modules/bluetooth.h</itemPath>
       <itemPath>../../Source/Modules/debug.h</itemPath>
       <itemPath>../../Source/Modules/int0.h</itemPath>
@@ -21,6 +32,7 @@
       <itemPath>../../Source/Modules/modules.c</itemPath>
       <itemPath>../../Source/Modules/pll.h</itemPath>
       <itemPath>../../Source/Modules/queue.h</itemPath>
+      <itemPath>../../Source/Modules/shell.h</itemPath>
       <itemPath>../../Source/Modules/timer.h</itemPath>
       <itemPath>../../Source/Modules/uart.h</itemPath>
     </logicalFolder>
