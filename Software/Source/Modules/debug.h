@@ -41,6 +41,7 @@
             printf( " %02X", *( (BYTE*)xBuf + i ) );    \
         }                                               \
         printf( "\r\n" );                               \
+        Uart1Flush();                                   \
     }
 #else
 #define DEBUG_PRINTF( ... ) {}

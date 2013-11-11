@@ -127,8 +127,8 @@ void Shell( void )
                         }
                     }
                 
-                    ShellExecCommand( uart1ShellArgc, uart1ShellArgv );
-
+                    int ret = ExecCommand( uart1ShellArgc, uart1ShellArgv );
+                    printf( "Shell command done ret=%d\r\n", ret );
                     uart1ShellLinePointer = 0;
                     
                 } else {

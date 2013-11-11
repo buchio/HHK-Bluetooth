@@ -24,6 +24,13 @@
  *
  */
 
+
+#define YTS_SAMPLE
+
+#ifdef YTS_SAMPLE
+
+#else //YTS_SAMPLE
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -838,3 +845,5 @@ void ManageHciSequence( void )
             break;
     }
 }
+
+#endif //YTS_SAMPLE

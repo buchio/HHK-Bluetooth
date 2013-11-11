@@ -65,7 +65,6 @@ typedef struct {
     unsigned char buf[DATA_PACKET_LENGTH];
 } recvHciEventParam_t;
 
-
 extern sendParam_t sendHciCommandParam;
 extern recvHciEventParam_t recvHciEventParam;
 extern sendParam_t sendAclDataParam;
@@ -73,8 +72,6 @@ extern unsigned char recvAclBuf[DATA_PACKET_LENGTH];
 extern unsigned char recvHciBuf[DATA_PACKET_LENGTH];
 extern BT_STATE     btState;
 
-
 void ManageBluetoothState ( void );
-
 
 #endif //H_DONGLE_H_131023082113_
